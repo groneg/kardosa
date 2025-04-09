@@ -1,0 +1,14 @@
+# Backend requirements for Kardosa
+
+Flask
+SQLAlchemy
+Flask-SQLAlchemy
+Flask-Migrate
+Werkzeug # For password hashing
+Flask-CORS # Allow Cross-Origin Resource Sharing
+Flask-Login # For session-based authentication
+opencv-python # For image processing
+pytesseract # For OCR (requires Tesseract executable installed)
+requests # For calling external APIs like eBay
+python-dotenv # For managing API keys
+# Add other dependencies here as needed (e.g., Pillow for image handling, requests for API calls) 
