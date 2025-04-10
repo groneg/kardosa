@@ -5,9 +5,9 @@ from .models import User, Card, Player, Team
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timezone
-from .image_utils import split_binder_page
+from .image_utils import split_binder_page, split_binder_page_by_grid
 from .ebay_client import find_card_on_ebay
-from .services import map_ebay_result_to_card_data, save_card_from_data
+from .services import map_ebay_result_to_card_data, save_card_from_data, format_season_year, parse_season_year
 
 # Helper function for uploads
 def allowed_file(filename):
@@ -131,7 +131,135 @@ def upload_single_card_image():
     else:
         return jsonify({'error': 'File type not allowed'}), 400
 
+# --- Binder Image Upload Route ---
+@current_app.route('/upload-binder', methods=['POST'])
+@login_required
+def upload_binder_image():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        user_id = current_user.id
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        unique_filename = f"{user_id}_{timestamp}_{filename}"
+        save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+
+        processed_cards_results = [] # Store results for each card
+        errors = []
+
+        try:
+            file.save(save_path)
+            print(f"Binder page saved to: {save_path}")
+
+            # --- Call GRID image splitting (with 3% crop) --- 
+            base_filename = os.path.splitext(unique_filename)[0]
+            split_output_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], base_filename + '_cards')
+            extracted_card_paths = split_binder_page_by_grid(save_path, split_output_dir, inner_crop_percent=3)
+
+            if not extracted_card_paths:
+                errors.append("Failed to extract any cards from the binder page image (using grid method).")
+            else:
+                print(f"Extracted {len(extracted_card_paths)} potential card images. Processing each...")
+                # --- Process Each Extracted Card Synchronously ---
+                for i, card_path in enumerate(extracted_card_paths):
+                    print(f"--- Processing card {i+1} from {card_path} ---")
+                    try:
+                        # 1. eBay Lookup
+                        ebay_result = find_card_on_ebay(card_path)
+                        if not ebay_result:
+                            errors.append(f"Card {i+1}: eBay lookup failed.")
+                            continue
+
+                        # 2. Data Mapping
+                        mapped_data = map_ebay_result_to_card_data(ebay_result)
+                        if not mapped_data:
+                            errors.append(f"Card {i+1}: Failed to map data from eBay result.")
+                            continue
+
+                        # 3. Save to DB
+                        newly_saved_card = save_card_from_data(mapped_data, user_id)
+                        if newly_saved_card:
+                            processed_cards_results.append({
+                                'source_image': os.path.basename(card_path),
+                                'saved_card_id': newly_saved_card.id,
+                                'player_name': newly_saved_card.player_name
+                            })
+                        else:
+                            errors.append(f"Card {i+1}: Failed to save mapped data to database.")
+
+                    except Exception as card_e:
+                        error_msg = f"Card {i+1}: Unexpected error during processing: {card_e}"
+                        print(error_msg)
+                        errors.append(error_msg)
+                # --- End Processing Loop ---
+
+            # Construct final response
+            response_status = 201 if processed_cards_results else (202 if errors else 200)
+            response_message = f"Binder processing complete. Saved {len(processed_cards_results)} cards."
+            if errors:
+                response_message += f" Encountered {len(errors)} errors."
+
+            return jsonify({
+                'message': response_message,
+                'original_filename': unique_filename,
+                'saved_cards': processed_cards_results,
+                'processing_errors': errors
+            }), response_status
+
+        except Exception as e:
+            # Handle exceptions during initial save or overall process
+            print(f"Error saving or processing binder file: {e}")
+            return jsonify({'error': 'Failed to save or process binder file on server'}), 500
+    else:
+        return jsonify({'error': 'File type not allowed'}), 400
+
 # --- Card Management Routes (Flask-Login) ---
+
+@current_app.route('/cards', methods=['GET'])
+@login_required # Use Flask-Login decorator
+def get_cards():
+    # Debug logging
+    print(f"Current user authenticated: {current_user.is_authenticated}")
+    print(f"Current user ID: {current_user.id}")
+
+    user_id = current_user.id # Use Flask-Login proxy
+    user = User.query.get(user_id)
+    if not user:
+        print(f"User not found for ID: {user_id}")
+        return jsonify({"error": "User not found"}), 404 # Should not happen if auth is correct
+
+    # Using the relationship (lazy='dynamic' requires .all())
+    try:
+        user_cards = user.cards.order_by(Card.date_added.desc()).all()
+
+        # Serialize the list of cards
+        cards_list = []
+        for card in user_cards:
+            cards_list.append({
+                'id': card.id,
+                'player_name': card.player_name,
+                'card_year': card.card_year,  # Use the string directly from DB
+                'card_set': card.card_set,
+                'card_number': card.card_number,
+                'team': card.team,
+                'grade': card.grade,
+                'image_url': card.image_url,
+                'date_added': card.date_added.isoformat(),
+                'notes': card.notes
+            })
+
+        print(f"Returning {len(cards_list)} cards for user {user_id}")
+        return jsonify(cards_list), 200
+    except Exception as e:
+        # Print the full traceback to the backend console for debugging
+        import traceback
+        print(f"Error fetching cards: {e}")
+        traceback.print_exc() # Add this for detailed error logging
+        return jsonify({"error": "Internal server error while fetching cards"}), 500
 
 @current_app.route('/cards', methods=['POST'])
 @login_required # Use Flask-Login decorator
@@ -168,35 +296,6 @@ def create_card():
     }
     return jsonify(card_data), 201 # 201 Created
 
-@current_app.route('/cards', methods=['GET'])
-@login_required # Use Flask-Login decorator
-def get_cards():
-    user_id = current_user.id # Use Flask-Login proxy
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404 # Should not happen if auth is correct
-
-    # Using the relationship (lazy='dynamic' requires .all())
-    user_cards = user.cards.order_by(Card.date_added.desc()).all()
-
-    # Serialize the list of cards
-    cards_list = []
-    for card in user_cards:
-        cards_list.append({
-            'id': card.id,
-            'player_name': card.player_name,
-            'card_year': card.card_year,
-            'card_set': card.card_set,
-            'card_number': card.card_number,
-            'team': card.team,
-            'grade': card.grade,
-            'image_url': card.image_url,
-            'date_added': card.date_added.isoformat(),
-            'notes': card.notes
-        })
-
-    return jsonify(cards_list), 200
-
 @current_app.route('/cards/<int:card_id>', methods=['GET'])
 @login_required # Use Flask-Login decorator
 def get_card(card_id):
@@ -208,19 +307,25 @@ def get_card(card_id):
         return jsonify({"error": "Not authorized to view this card"}), 403 # Forbidden
 
     # Serialize the card data
-    card_data = {
-        'id': card.id,
-        'player_name': card.player_name,
-        'card_year': card.card_year,
-        'card_set': card.card_set,
-        'card_number': card.card_number,
-        'team': card.team,
-        'grade': card.grade,
-        'image_url': card.image_url,
-        'date_added': card.date_added.isoformat(),
-        'notes': card.notes
-    }
-    return jsonify(card_data), 200
+    try:
+        card_data = {
+            'id': card.id,
+            'player_name': card.player_name,
+            'card_year': card.card_year,  # Use the string directly from DB (already 'YYYY-YY' format)
+            'card_set': card.card_set,
+            'card_number': card.card_number,
+            'team': card.team,
+            'grade': card.grade,
+            'image_url': card.image_url,
+            'date_added': card.date_added.isoformat(),
+            'notes': card.notes
+        }
+        return jsonify(card_data), 200
+    except Exception as e:
+        import traceback
+        print(f"Error fetching single card (ID: {card_id}): {e}")
+        traceback.print_exc()
+        return jsonify({"error": "Internal server error while fetching card details"}), 500
 
 @current_app.route('/cards/<int:card_id>', methods=['PUT'])
 @login_required # Use Flask-Login decorator
@@ -238,7 +343,11 @@ def update_card(card_id):
 
     # Update fields if they are provided in the request data
     card.player_name = data.get('player_name', card.player_name)
-    card.card_year = data.get('card_year', card.card_year)
+    
+    # Handle card_year conversion from YYYY-YY to integer
+    if 'card_year' in data:
+        card.card_year = parse_season_year(data['card_year'])
+    
     card.card_set = data.get('card_set', card.card_set)
     card.card_number = data.get('card_number', card.card_number)
     card.team = data.get('team', card.team)
@@ -253,7 +362,13 @@ def update_card(card_id):
     card_data = {
         'id': card.id,
         'player_name': card.player_name,
-        # ... include other fields ...
+        'card_year': format_season_year(card.card_year),  # Convert to YYYY-YY format
+        'card_set': card.card_set,
+        'card_number': card.card_number,
+        'team': card.team,
+        'grade': card.grade,
+        'image_url': card.image_url,
+        'date_added': card.date_added.isoformat(),
         'notes': card.notes
     }
     return jsonify(card_data), 200
@@ -272,5 +387,36 @@ def delete_card(card_id):
     db.session.commit()
 
     return jsonify({"message": "Card deleted successfully"}), 200
+
+@current_app.route('/autocomplete-options', methods=['GET'])
+@login_required
+def get_autocomplete_options():
+    user_id = current_user.id
+    
+    try:
+        # Get all cards for the current user
+        user_cards = Card.query.filter_by(owner_id=user_id).all()
+        
+        # Extract unique values for each field
+        player_names = sorted(list(set(card.player_name for card in user_cards if card.player_name)))
+        card_sets = sorted(list(set(card.card_set for card in user_cards if card.card_set)))
+        teams = sorted(list(set(card.team for card in user_cards if card.team)))
+        grades = sorted(list(set(card.grade for card in user_cards if card.grade)))
+        
+        # Add some common grade options if not already present
+        common_grades = ["Raw", "PSA 10", "PSA 9", "PSA 8", "PSA 7", "BGS 10", "BGS 9.5", "BGS 9", "SGC 10", "SGC 9"]
+        for grade in common_grades:
+            if grade not in grades:
+                grades.append(grade)
+        
+        return jsonify({
+            'player_names': player_names,
+            'card_sets': card_sets,
+            'teams': teams,
+            'grades': grades
+        }), 200
+    except Exception as e:
+        print(f"Error fetching autocomplete options: {e}")
+        return jsonify({"error": "Internal server error while fetching autocomplete options"}), 500
 
 # Add more routes here as needed 
