@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 
+// Define an interface for the context
+interface RouteContext {
+  params: {
+    id: string;
+  };
+}
+
 export async function GET(
   request: Request,
-  context: { params: { id: string } }
+  context: RouteContext // Use the interface here
 ) {
   try {
     const { id } = context.params;
