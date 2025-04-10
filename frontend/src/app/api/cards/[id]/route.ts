@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Define an interface for the context
-interface RouteContext {
-  params: {
-    id: string;
-  };
-}
-
 export async function GET(
   request: NextRequest,
-  context: RouteContext // Use the interface here
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = context.params;
+    const { id } = await params; // Await params to resolve the dynamic route parameter
     console.log(`Fetching card with ID: ${id}`);
     console.log(`API URL: ${process.env.NEXT_PUBLIC_API_URL}`);
     
@@ -38,4 +31,4 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}
