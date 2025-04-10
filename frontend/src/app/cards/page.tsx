@@ -12,6 +12,7 @@ interface Card {
   is_rookie: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 'use client';
 
 import React, { useState, useEffect } from 'react';
