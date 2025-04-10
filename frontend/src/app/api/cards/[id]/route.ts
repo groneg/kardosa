@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 // Define an interface for the context
 interface RouteContext {
@@ -8,7 +8,7 @@ interface RouteContext {
 }
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   context: RouteContext // Use the interface here
 ) {
   try {
