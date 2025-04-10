@@ -64,6 +64,15 @@ def logout():
     logout_user() # Clears the session cookie
     return jsonify({"message": "Logout successful"}), 200
 
+@current_app.route('/user', methods=['GET'])
+@login_required
+def get_current_user():
+    return jsonify({
+        'id': current_user.id,
+        'username': current_user.username,
+        'email': current_user.email
+    }), 200
+
 # --- Single Card Upload Route --- CORRECTED
 
 @current_app.route('/upload-single-card', methods=['POST'])
@@ -243,13 +252,14 @@ def get_cards():
                 'id': card.id,
                 'player_name': card.player_name,
                 'card_year': card.card_year,  # Use the string directly from DB
-                'card_set': card.card_set,
+                'manufacturer': card.manufacturer,
                 'card_number': card.card_number,
                 'team': card.team,
                 'grade': card.grade,
                 'image_url': card.image_url,
                 'date_added': card.date_added.isoformat(),
-                'notes': card.notes
+                'notes': card.notes,
+                'sport': card.sport
             })
 
         print(f"Returning {len(cards_list)} cards for user {user_id}")
@@ -269,30 +279,49 @@ def create_card():
     if not data or not data.get('player_name'):
         return jsonify({'error': 'Missing required card data (player_name)'}), 400
 
-    # Basic validation/sanitization would go here
+    # Extract card details from request data
+    player_name = data.get('player_name')
+    card_year = parse_season_year(data.get('card_year'))
+    manufacturer = data.get('manufacturer')
+    card_number = data.get('card_number')
+    team = data.get('team')
+    grade = data.get('grade')
+    image_url = data.get('image_url')
+    notes = data.get('notes', '')
+    sport = data.get('sport')
 
+    # Validate required fields
+    if not all([player_name, card_year, manufacturer, card_number, team]):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    # Create new card
     new_card = Card(
-        owner_id=user_id,
-        player_name=data.get('player_name'),
-        card_year=data.get('card_year'),
-        card_set=data.get('card_set'),
-        card_number=data.get('card_number'),
-        team=data.get('team'),
-        grade=data.get('grade'),
-        image_url=data.get('image_url'),
-        notes=data.get('notes')
-        # date_added is handled by default in the model
+        player_name=player_name,
+        card_year=card_year,
+        manufacturer=manufacturer,
+        card_number=card_number,
+        team=team,
+        grade=grade,
+        image_url=image_url,
+        notes=notes,
+        sport=sport,
+        owner_id=current_user.id,
+        date_added=datetime.utcnow()
     )
-    db.session.add(new_card)
-    db.session.commit()
 
-    # Prepare response data (you might want a function to serialize card objects)
+    # Return card data in response
     card_data = {
         'id': new_card.id,
         'player_name': new_card.player_name,
-        'card_year': new_card.card_year,
-        # ... include other fields ...
-        'date_added': new_card.date_added.isoformat()
+        'card_year': format_season_year(new_card.card_year),
+        'manufacturer': new_card.manufacturer,
+        'card_number': new_card.card_number,
+        'team': new_card.team,
+        'grade': new_card.grade,
+        'image_url': new_card.image_url,
+        'date_added': new_card.date_added.isoformat(),
+        'notes': new_card.notes,
+        'sport': new_card.sport
     }
     return jsonify(card_data), 201 # 201 Created
 
@@ -312,13 +341,14 @@ def get_card(card_id):
             'id': card.id,
             'player_name': card.player_name,
             'card_year': card.card_year,  # Use the string directly from DB (already 'YYYY-YY' format)
-            'card_set': card.card_set,
+            'manufacturer': card.manufacturer,
             'card_number': card.card_number,
             'team': card.team,
             'grade': card.grade,
             'image_url': card.image_url,
             'date_added': card.date_added.isoformat(),
-            'notes': card.notes
+            'notes': card.notes,
+            'sport': card.sport
         }
         return jsonify(card_data), 200
     except Exception as e:
@@ -348,12 +378,13 @@ def update_card(card_id):
     if 'card_year' in data:
         card.card_year = parse_season_year(data['card_year'])
     
-    card.card_set = data.get('card_set', card.card_set)
+    card.manufacturer = data.get('manufacturer', card.manufacturer)
     card.card_number = data.get('card_number', card.card_number)
     card.team = data.get('team', card.team)
     card.grade = data.get('grade', card.grade)
     card.image_url = data.get('image_url', card.image_url)
     card.notes = data.get('notes', card.notes)
+    card.sport = data.get('sport', card.sport)
     # owner_id and date_added should generally not be updated here
 
     db.session.commit()
@@ -363,13 +394,14 @@ def update_card(card_id):
         'id': card.id,
         'player_name': card.player_name,
         'card_year': format_season_year(card.card_year),  # Convert to YYYY-YY format
-        'card_set': card.card_set,
+        'manufacturer': card.manufacturer,
         'card_number': card.card_number,
         'team': card.team,
         'grade': card.grade,
         'image_url': card.image_url,
         'date_added': card.date_added.isoformat(),
-        'notes': card.notes
+        'notes': card.notes,
+        'sport': card.sport
     }
     return jsonify(card_data), 200
 
@@ -399,7 +431,7 @@ def get_autocomplete_options():
         
         # Extract unique values for each field
         player_names = sorted(list(set(card.player_name for card in user_cards if card.player_name)))
-        card_sets = sorted(list(set(card.card_set for card in user_cards if card.card_set)))
+        manufacturers = sorted(list(set(card.manufacturer for card in user_cards if card.manufacturer)))
         teams = sorted(list(set(card.team for card in user_cards if card.team)))
         grades = sorted(list(set(card.grade for card in user_cards if card.grade)))
         
@@ -411,7 +443,7 @@ def get_autocomplete_options():
         
         return jsonify({
             'player_names': player_names,
-            'card_sets': card_sets,
+            'manufacturers': manufacturers,
             'teams': teams,
             'grades': grades
         }), 200

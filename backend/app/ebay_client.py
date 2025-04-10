@@ -102,10 +102,13 @@ def find_card_on_ebay(image_path):
         "image": encoded_string
     }
 
+    # Add limit query parameter to the endpoint URL
+    request_url = f"{api_endpoint}?limit=2"
+
     # --- Make API Call ---
     try:
-        print(f"DEBUG: Making POST request to {api_endpoint} for image {os.path.basename(image_path)}")
-        response = requests.post(api_endpoint, headers=headers, json=request_body)
+        print(f"DEBUG: Making POST request to {request_url} for image {os.path.basename(image_path)}")
+        response = requests.post(request_url, headers=headers, json=request_body)
 
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
         api_response_data = response.json()

@@ -8,10 +8,10 @@ load_dotenv(os.path.join(basedir, '.env')) # Load .env file
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess-this-dev-key'
     # Add Session Cookie settings for Flask-Login & CORS
-    SESSION_COOKIE_SECURE = True # Send cookie only over HTTPS (production)
+    SESSION_COOKIE_SECURE = False  # Allow cookies over HTTP in development
     SESSION_COOKIE_HTTPONLY = True # Prevent JS access to cookie
-    SESSION_COOKIE_SAMESITE = 'Lax' # Adjust to 'None' if needed for cross-site requests, requires SECURE=True
-    REMEMBER_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = 'Lax' # Allow cross-site requests in same-site context
+    REMEMBER_COOKIE_SECURE = False  # Allow remember cookie over HTTP in development
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_SAMESITE = 'Lax'
     # eBay API Config from .env

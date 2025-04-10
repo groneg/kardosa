@@ -11,4 +11,7 @@ opencv-python # For image processing
 pytesseract # For OCR (requires Tesseract executable installed)
 requests # For calling external APIs like eBay
 python-dotenv # For managing API keys
+thefuzz[speedup] # For fuzzy string matching
+gunicorn # Production WSGI server
+psycopg2-binary # PostgreSQL driver
 # Add other dependencies here as needed (e.g., Pillow for image handling, requests for API calls) 

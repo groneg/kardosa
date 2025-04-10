@@ -39,23 +39,40 @@ class User(db.Model, UserMixin): # Inherit from UserMixin
 
 class Card(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    player_name = db.Column(db.String(100), nullable=False)
+    card_year = db.Column(db.Integer, nullable=False)
+    manufacturer = db.Column(db.String(100), nullable=False)
+    card_number = db.Column(db.String(50))
+    team = db.Column(db.String(100))
+    grade = db.Column(db.String(50))
+    image_url = db.Column(db.String(500))
+    notes = db.Column(db.Text)
+    sport = db.Column(db.String(50))
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    player_name = db.Column(db.String(128), index=True, nullable=False)
-    card_year = db.Column(db.Integer, index=True)
-    card_set = db.Column(db.String(128), index=True)
-    card_number = db.Column(db.String(20)) # e.g., "#12A", "NNO"
-    team = db.Column(db.String(128), index=True)
-    grade = db.Column(db.String(64), nullable=True) # e.g., "PSA 10", "BGS 9.5", "SGC 9", "Raw"
-    image_url = db.Column(db.String(512), nullable=True) # URL to image in object storage
-    date_added = db.Column(db.DateTime, index=True, default=lambda: datetime.now(timezone.utc))
-    notes = db.Column(db.Text, nullable=True)
+    date_added = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationship: Many cards belong to one user
     # back_populates links this to the 'cards' relationship in User
     owner = db.relationship('User', back_populates='cards')
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'player_name': self.player_name,
+            'card_year': self.card_year,
+            'manufacturer': self.manufacturer,
+            'card_number': self.card_number,
+            'team': self.team,
+            'grade': self.grade,
+            'image_url': self.image_url,
+            'notes': self.notes,
+            'sport': self.sport,
+            'owner_id': self.owner_id,
+            'date_added': self.date_added.isoformat() if self.date_added else None
+        }
+
     def __repr__(self):
-        return f'<Card {self.card_year} {self.card_set} {self.player_name} {self.card_number or ""}>'
+        return f'<Card {self.card_year} {self.manufacturer} {self.player_name} {self.card_number or ""}>'
 
 # Potentially add Player and Team models here later for validation/enrichment
 
@@ -76,4 +93,15 @@ class Player(db.Model):
     # Could add active years if derivable
 
     def __repr__(self):
-        return f'<Player {self.full_name}>' 
+        return f'<Player {self.full_name}>'
+
+# Add CardSet model at the end of the file
+class CardSet(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), unique=True, nullable=False, index=True)
+    year = db.Column(db.Integer, index=True, nullable=False)
+    manufacturer = db.Column(db.String(100), nullable=True)
+    sport = db.Column(db.String(50), nullable=True)
+
+    def __repr__(self):
+        return f'<CardSet {self.name} ({self.year})>' 
