@@ -14,10 +14,9 @@ interface Card {
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import CardGrid from '../../components/CardGrid';
-import Link from 'next/link';
 import { useSwipeable } from 'react-swipeable';
 
 export default function CardsPage() {

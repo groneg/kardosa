@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -103,20 +104,13 @@ export default function LoginPage() {
               {loading ? 'Logging in...' : 'Login'}
             </button>
           </div>
+          <div className="text-sm font-medium text-gray-500 dark:text-gray-300 mt-4">
+            Not registered? <a href="/register" className="text-red-600 hover:underline dark:text-red-500">Create account</a>
+          </div>
+          <div className="text-sm font-medium text-gray-500 dark:text-gray-300 mt-4">
+            Return to <Link href="/" className="text-red-600 hover:underline dark:text-red-500">Home Page</Link>
+          </div>
         </form>
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600">
-            Don&apos;t have an account?{' '}
-            <a href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Register here
-            </a>
-          </p>
-        </div>
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600">
-            Return to <a href="/" className="font-medium text-indigo-600 hover:text-indigo-500">Home Page</a>
-          </p>
-        </div>
       </div>
     </main>
   );

@@ -3,21 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Define the Card type based on your data structure
-type Card = {
-  id: number;
-  player_name: string;
-  card_year: number;
-  manufacturer: string;
-  grade?: string; // Optional
-  grading_co?: string; // Optional
-  img_url?: string; // Optional
-};
-
 export default function HomePage() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Add state for login status
   const [isLoading, setIsLoading] = useState(true);
 
   // const router = useRouter(); // Uncomment for redirect
