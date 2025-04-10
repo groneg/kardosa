@@ -27,7 +27,7 @@ def create_app(config_class=Config):
 
     # Enable CORS with support for credentials (cookies) - More explicit config
     CORS(app,
-         origins=["http://localhost:3000"], # Allow specific origin
+         origins=["http://localhost:3000", "https://kardosa.xyz"], # Allow specific origins (local dev and production)
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"], # Allow common methods
          allow_headers=["Content-Type", "Authorization", "X-Requested-With"], # Allow common headers
          supports_credentials=True # Allow cookies
