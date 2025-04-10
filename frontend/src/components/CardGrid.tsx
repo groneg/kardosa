@@ -1,5 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 // Define the structure of a Card object (matching backend)
 interface Card {
@@ -38,17 +39,22 @@ const CardGrid: React.FC<CardGridProps> = ({ cards }) => {
           className="border rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer bg-white"
           onClick={() => handleCardClick(card.id)}
         >
-          {card.image_url ? (
-            <img
-              src={card.image_url}
-              alt={`${card.card_year || ''} ${card.manufacturer || ''} ${card.player_name}`}
-              className="w-full h-48 object-cover"
-            />
-          ) : (
-            <div className="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-400">
-              No Image
-            </div>
-          )}
+          <div className="relative w-full h-48">
+            {card.image_url ? (
+              <Image
+                src={card.image_url}
+                alt={`${card.card_year || ''} ${card.manufacturer || ''} ${card.player_name}`}
+                fill
+                style={{ objectFit: 'cover' }}
+                className=""
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">
+                No Image
+              </div>
+            )}
+          </div>
           <div className="p-2 text-sm">
             <p className="font-semibold truncate" title={card.player_name}>{card.player_name}</p>
             <div className="text-sm text-gray-600">

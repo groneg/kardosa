@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Image from "next/image";
 
 interface Card {
   id: number;
@@ -232,12 +233,15 @@ export default function EditCardPage() {
       onTouchEnd={handleTouchEnd}
     >
       <div className="w-full max-w-2xl">
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6 relative aspect-w-3 aspect-h-4">
           {card.image_url ? (
-            <img
+            <Image
               src={card.image_url}
               alt={`${card.card_year || ''} ${card.manufacturer || ''} ${card.player_name}`}
-              className="w-full h-auto rounded-lg"
+              fill
+              style={{ objectFit: 'contain' }}
+              className="rounded-lg"
+              priority
             />
           ) : (
             <div className="w-full h-64 bg-gray-200 flex items-center justify-center text-gray-400 rounded-lg">
