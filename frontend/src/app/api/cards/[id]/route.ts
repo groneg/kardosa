@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    console.log(`Fetching card with ID: ${params.id}`);
+    const { id } = context.params;
+    console.log(`Fetching card with ID: ${id}`);
     console.log(`API URL: ${process.env.NEXT_PUBLIC_API_URL}`);
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cards/${params.id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cards/${id}`, {
       credentials: 'include',
     });
 
