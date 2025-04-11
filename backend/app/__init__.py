@@ -50,10 +50,13 @@ def create_app(config_class=Config):
         # Load reference data into memory cache on startup
         try:
             from .services import load_reference_data_cache
+            print("Attempting to load reference data cache...") # Add logging
             load_reference_data_cache()
-        except Exception as e:
-            print(f"Error loading reference data cache: {e}")
-            # Consider how to handle this - app might not function correctly
+            print("Successfully loaded reference data cache.") # Add logging
+        except Exception as e: # Catch broad exceptions during initial load
+            print(f"WARNING: Could not load reference data cache during startup: {e}")
+            print("WARNING: App will continue starting. Cache can be loaded later or on next request.")
+            # Don't re-raise the exception, allow the app to start
 
     @app.route('/test/') # A simple test route directly in the factory
     def test_page():
