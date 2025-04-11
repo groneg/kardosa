@@ -27,7 +27,7 @@ def create_app(config_class=Config):
 
     # Enable CORS with support for credentials (cookies) - More explicit config
     CORS(app,
-         origins=["http://localhost:3000", "https://kardosa.xyz"], # Allow specific origins (local dev and production)
+         origins=["http://localhost:3000", "https://kardosa.xyz"], # Allow specific origins
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"], # Allow common methods
          allow_headers=["Content-Type", "Authorization", "X-Requested-With"], # Allow common headers
          supports_credentials=True # Allow cookies
@@ -50,13 +50,10 @@ def create_app(config_class=Config):
         # Load reference data into memory cache on startup
         try:
             from .services import load_reference_data_cache
-            print("Attempting to load reference data cache...") # Add logging
             load_reference_data_cache()
-            print("Successfully loaded reference data cache.") # Add logging
-        except Exception as e: # Catch broad exceptions during initial load
-            print(f"WARNING: Could not load reference data cache during startup: {e}")
-            print("WARNING: App will continue starting. Cache can be loaded later or on next request.")
-            # Don't re-raise the exception, allow the app to start
+        except Exception as e:
+            print(f"Error loading reference data cache: {e}")
+            # Consider how to handle this - app might not function correctly
 
     @app.route('/test/') # A simple test route directly in the factory
     def test_page():
