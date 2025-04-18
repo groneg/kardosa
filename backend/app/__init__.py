@@ -50,7 +50,7 @@ def create_app(config_class=Config):
         # Load reference data into memory cache on startup
         try:
             from .services import load_reference_data_cache
-            load_reference_data_cache()
+            load_reference_data_cache() # Re-enabled after migration fix
         except Exception as e:
             print(f"Error loading reference data cache: {e}")
             # Consider how to handle this - app might not function correctly
