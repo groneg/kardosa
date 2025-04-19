@@ -49,13 +49,29 @@ def login():
     if not data or not data.get('username') or not data.get('password'):
         return jsonify({'error': 'Missing username or password'}), 400
 
+    # --- Debugging --- 
+    print(f"Attempting login for username: '{data.get('username')}'")
+    print(f"Password received (type: {type(data.get('password'))}): '{data.get('password')}'")
+    # ----------------
+    
     user = User.query.filter_by(username=data['username']).first()
 
+    # --- Debugging --- 
+    if user:
+        print(f"User found: {user.username}")
+        password_check_result = user.check_password(data['password'])
+        print(f"Password check result: {password_check_result}")
+    else:
+        print("User not found in database.")
+    # ----------------
+
     if user is None or not user.check_password(data['password']):
+        print("Login failed due to user being None or password check failure.") # Debug
         return jsonify({'error': 'Invalid username or password'}), 401
 
     # Use Flask-Login to establish session
     login_user(user) # Sets the session cookie
+    print("Login successful, setting session cookie.") # Debug
     return jsonify({'message': 'Login successful', 'user_id': user.id}), 200
 
 @current_app.route('/logout', methods=['POST'])
