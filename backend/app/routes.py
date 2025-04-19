@@ -54,7 +54,8 @@ def login():
     print(f"Password received (type: {type(data.get('password'))}): '{data.get('password')}'")
     # ----------------
     
-    user = User.query.filter_by(username=data['username']).first()
+    login_identifier = data['username'] # Input can be username or email
+    user = User.query.filter((User.username == login_identifier) | (User.email == login_identifier)).first()
 
     # --- Debugging --- 
     if user:
