@@ -4,7 +4,7 @@ Flask
 SQLAlchemy
 Flask-SQLAlchemy
 Flask-Migrate
-Werkzeug # For password hashing
+Werkzeug==3.1.3 # For password hashing - Pinned version
 Flask-CORS # Allow Cross-Origin Resource Sharing
 Flask-Login # For session-based authentication
 opencv-python # For image processing
