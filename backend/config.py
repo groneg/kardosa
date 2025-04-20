@@ -15,6 +15,9 @@ class Config:
     # Requires Secure=True
     SESSION_COOKIE_SAMESITE = 'None'
 
+    # Domain Scope for Cookie (Crucial for cross-subdomain)
+    SESSION_COOKIE_DOMAIN = '.kardosa.xyz'
+
     # Force secure settings for REMEMBER_COOKIE as well
     REMEMBER_COOKIE_SECURE = True
     REMEMBER_COOKIE_HTTPONLY = True
