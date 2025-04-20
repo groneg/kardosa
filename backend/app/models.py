@@ -40,7 +40,7 @@ class User(db.Model, UserMixin): # Inherit from UserMixin
 class Card(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     player_name = db.Column(db.String(100), nullable=False)
-    card_year = db.Column(db.Integer, nullable=False)
+    card_year = db.Column(db.String(20), nullable=False)  # Changed from Integer to String to store YYYY-YY format
     manufacturer = db.Column(db.String(100), nullable=False)
     card_number = db.Column(db.String(50))
     team = db.Column(db.String(100))

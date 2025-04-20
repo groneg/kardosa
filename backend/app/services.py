@@ -371,7 +371,7 @@ def map_ebay_result_to_card_data(ebay_result):
     if not mapped_data['player_name']:
         print("Failed to find a matching player name in database from eBay data.")
         return None
-
+        
     print(f"Mapped Data: {mapped_data}")
     return mapped_data
 
@@ -392,14 +392,29 @@ def save_card_from_data(data, user_id):
             'date_added': datetime.utcnow()
         }
 
+        # Detailed validation logging
+        missing_required = []
+        for field in ['player_name', 'card_year', 'manufacturer', 'owner_id']:
+            if not mapped_data.get(field):
+                missing_required.append(field)
+        
+        if missing_required:
+            error_msg = f"Missing required fields: {', '.join(missing_required)}"
+            print(f"ERROR: {error_msg}")
+            return None
+
+        print(f"Saving card with data: player={mapped_data['player_name']}, year={mapped_data['card_year']}, manufacturer={mapped_data['manufacturer']}, owner_id={mapped_data['owner_id']}")
+        
         # Create new card
         new_card = Card(**mapped_data)
         db.session.add(new_card)
         db.session.commit()
+        print(f"Successfully saved card ID: {new_card.id}")
 
         return new_card
     except Exception as e:
         db.session.rollback()
+        print(f"ERROR: Failed to save card: {str(e)}")
         raise Exception(f"Error saving card to database: {str(e)}")
 
-# TODO: Add function to create/save Card object from mapped_data 
+# TODO: Add function to create/save Card object from mapped_data
