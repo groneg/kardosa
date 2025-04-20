@@ -15,7 +15,7 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  // API_URL is now handled in the apiRequest utility
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -30,7 +30,8 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const data = await apiRequest('/register', {
+      // Send registration request and wait for response
+      await apiRequest('/register', {
         method: 'POST',
         body: JSON.stringify({ username, email, password })
       });
