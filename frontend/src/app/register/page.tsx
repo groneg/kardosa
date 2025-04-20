@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation'; // Add router for redirection
+import { apiRequest } from '../../utils/api';
 
 export default function RegisterPage() {
   const router = useRouter(); // Initialize router
@@ -29,20 +30,11 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/register`, {
+      const data = await apiRequest('/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, password })
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Use the error message from the backend if available
-        throw new Error(data.error || `HTTP error! status: ${response.status}`);
-      }
 
       // Registration successful
       setSuccess('Registration successful! Redirecting to login...');

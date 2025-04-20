@@ -19,6 +19,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CardGrid from '../../components/CardGrid';
 import { useSwipeable } from 'react-swipeable';
+import { apiRequest } from '../../utils/api';
 
 export default function CardsPage() {
   const router = useRouter();
@@ -61,27 +62,23 @@ export default function CardsPage() {
     );
   });
 
-  const handleLogout = () => {
-    fetch(`${API_URL}/logout`, { 
-      method: 'POST', 
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-      .then(res => {
-          if(res.ok) {
-              console.log("Logout successful on backend.");
-              setCards([]); // Clear cards data
-              setError(null);
-              router.push('/login');
-          } else {
-              console.error("Backend logout failed.");
-          }
-      })
-      .catch(err => {
-          console.error("Error during logout fetch:", err);
-      });
+  const handleLogout = async () => {
+    try {
+      await apiRequest('/logout', { method: 'POST' });
+      console.log("Logout successful on backend.");
+      
+      // Clear JWT token from localStorage
+      localStorage.removeItem('jwt_token');
+      
+      // Clear app state
+      setCards([]); 
+      setError(null);
+      
+      // Redirect to login page
+      router.push('/login');
+    } catch (err) {
+      console.error("Error during logout:", err);
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,10 +93,20 @@ export default function CardsPage() {
     formData.append('file', file);
 
     try {
+      // For file uploads, we need to use fetch directly to support FormData
+      // but we'll add the authorization header from our API utility
+      const token = localStorage.getItem('jwt_token');
+      const headers: HeadersInit = {};
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(`${API_URL}/upload-binder`, {
         method: 'POST',
         body: formData,
-        credentials: 'include'
+        credentials: 'include',
+        headers
       });
 
       if (!response.ok) {
@@ -125,24 +132,15 @@ export default function CardsPage() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch(`${API_URL}/user`, {
-          method: 'GET',
-          credentials: 'include'
-        });
-
-        if (response.status === 401) {
-          router.push('/login');
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch user data');
-        }
-
-        const data = await response.json();
+        const data = await apiRequest('/user');
         setUsername(data.username);
       } catch (err) {
         console.error('Error fetching user data:', err);
+        
+        // If authentication fails, redirect to login
+        if (err instanceof Error && err.message.includes('401')) {
+          router.push('/login');
+        }
       }
     };
 
@@ -154,27 +152,17 @@ export default function CardsPage() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${API_URL}/cards`, {
-            method: 'GET',
-            credentials: 'include' // Send cookies (like the session cookie)
-        });
-
-        if (response.status === 401) {
-            setError("You must be logged in to view cards. Please log in.");
-            router.push('/login');
-            return;
-        }
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-        }
-        const data = await response.json();
+        const data = await apiRequest('/cards');
         setCards(data as Card[]);
       } catch (err) {
         console.error("Failed to fetch cards:", err);
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        
+        // If authentication fails, redirect to login
+        if (err instanceof Error && err.message.includes('401')) {
+          setError("You must be logged in to view cards. Please log in.");
+          router.push('/login');
+        }
       } finally {
         setLoading(false);
       }

@@ -25,12 +25,37 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Enable CORS with support for credentials (cookies) - More explicit config
+    # Load CORS configuration from environment or use defaults
+    # For local development, we'll make it handle any localhost/127.0.0.1 origin
+    dev_origins = [
+        'http://localhost:3000',    # Regular local frontend
+        'http://127.0.0.1:3000',    # IPv4 equivalent 
+        'http://localhost:8080',    # Alternative port
+        'http://127.0.0.1:8080',    # Alternative port IPv4
+        'http://localhost:56213',   # Preview port
+        'http://127.0.0.1:56213',   # Preview port IPv4
+        'http://localhost:54439',   # Another preview port
+        'http://127.0.0.1:54439',   # Another preview port IPv4
+        # Add any range of ports for development
+    ]
+    
+    # Add wildcard port ranges for local development
+    for port in range(50000, 60000):
+        dev_origins.append(f'http://localhost:{port}')
+        dev_origins.append(f'http://127.0.0.1:{port}')
+
+    # Production origins
+    prod_origins = ['https://kardosa.xyz']
+    
+    # Choose origins based on environment
+    origins = prod_origins if app.config.get('ENV') == 'production' else dev_origins
+    
+    # Apply CORS configuration
     CORS(app,
-         origins=["http://localhost:3000", "https://kardosa.xyz"], # Allow specific origins
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"], # Allow common methods
-         allow_headers=["Content-Type", "Authorization", "X-Requested-With"], # Allow common headers
-         supports_credentials=True # Allow cookies
+         origins=origins,  # Use the appropriate origins list
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+         supports_credentials=True  # Allow cookies/credentials
         )
 
     # Initialize Flask extensions here

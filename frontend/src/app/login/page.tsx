@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { apiRequest } from '../../utils/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,24 +29,21 @@ export default function LoginPage() {
         password: password,
       };
 
-      const response = await fetch(`${API_URL}/login`, {
+      const data = await apiRequest('/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(loginPayload),
-        credentials: 'include' // Send cookies with the request
+        body: JSON.stringify(loginPayload)
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || `HTTP error! status: ${response.status}`);
-      }
 
       // Login successful
       setSuccess(`Login successful! Redirecting to your collection...`);
-      console.log("Login successful, session cookie set by browser.");
+      
+      // Store the JWT token in localStorage for header-based auth
+      if (data.token) {
+        localStorage.setItem('jwt_token', data.token);
+        console.log("Login successful, JWT token stored in localStorage.");
+      } else {
+        console.log("Login successful, but no token received. Falling back to cookie auth.");
+      }
 
       // Clear form
       setEmail('');

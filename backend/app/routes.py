@@ -3,6 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from . import db
 from .models import User, Card, Player, Team
 from werkzeug.utils import secure_filename
+from .auth import token_required
 import os
 from datetime import datetime, timezone
 from .image_utils import split_binder_page, split_binder_page_by_grid
@@ -70,20 +71,41 @@ def login():
         print("Login failed due to user being None or password check failure.") # Debug
         return jsonify({'error': 'Invalid username or password'}), 401
 
-    # Use Flask-Login to establish session
+    # Generate JWT token
+    import jwt
+    import datetime
+    
+    # Create token with user ID and expiration
+    token_payload = {
+        'user_id': user.id,
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1)  # Token expires in 1 day
+    }
+    
+    # Sign the token with the app's secret key
+    token = jwt.encode(token_payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+    
+    # Still use Flask-Login for session management (dual auth during migration)
     login_user(user) # Sets the session cookie
-    print("Login successful, setting session cookie.") # Debug
-    return jsonify({'message': 'Login successful', 'user_id': user.id}), 200
+    
+    print("Login successful, returning JWT token and setting session cookie.") # Debug
+    return jsonify({
+        'message': 'Login successful', 
+        'user_id': user.id,
+        'token': token  # Return the token to the client
+    }), 200
 
 @current_app.route('/logout', methods=['POST'])
-@login_required # Protect logout route
-def logout():
+@token_required
+def logout(current_user=None):
+    # Still call logout_user for cookie-based auth compatibility
     logout_user() # Clears the session cookie
     return jsonify({"message": "Logout successful"}), 200
 
 @current_app.route('/user', methods=['GET'])
-@login_required
-def get_current_user():
+@token_required  # Use our custom JWT token decorator
+def get_current_user(current_user=None):  # current_user will be passed by token_required
+    # The token_required decorator already handles authentication and passes the user
+    
     return jsonify({
         'id': current_user.id,
         'username': current_user.username,
@@ -93,8 +115,8 @@ def get_current_user():
 # --- Single Card Upload Route --- CORRECTED
 
 @current_app.route('/upload-single-card', methods=['POST'])
-@login_required
-def upload_single_card_image():
+@token_required
+def upload_single_card_image(current_user=None):
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
     file = request.files['file']
@@ -159,8 +181,8 @@ def upload_single_card_image():
 
 # --- Binder Image Upload Route ---
 @current_app.route('/upload-binder', methods=['POST'])
-@login_required
-def upload_binder_image():
+@token_required
+def upload_binder_image(current_user=None):
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
     file = request.files['file']
@@ -246,13 +268,14 @@ def upload_binder_image():
 # --- Card Management Routes (Flask-Login) ---
 
 @current_app.route('/cards', methods=['GET'])
-@login_required # Use Flask-Login decorator
-def get_cards():
+@token_required  # Use our custom JWT token decorator
+def get_cards(current_user=None):
+    # The token_required decorator already handles authentication and passes the user
+    
     # Debug logging
-    print(f"Current user authenticated: {current_user.is_authenticated}")
-    print(f"Current user ID: {current_user.id}")
+    print(f"User authenticated successfully, ID: {current_user.id}")
 
-    user_id = current_user.id # Use Flask-Login proxy
+    user_id = current_user.id
     user = User.query.get(user_id)
     if not user:
         print(f"User not found for ID: {user_id}")
@@ -289,8 +312,8 @@ def get_cards():
         return jsonify({"error": "Internal server error while fetching cards"}), 500
 
 @current_app.route('/cards', methods=['POST'])
-@login_required # Use Flask-Login decorator
-def create_card():
+@token_required
+def create_card(current_user=None):
     user_id = current_user.id # Use Flask-Login proxy
     data = request.get_json()
     if not data or not data.get('player_name'):
@@ -343,8 +366,8 @@ def create_card():
     return jsonify(card_data), 201 # 201 Created
 
 @current_app.route('/cards/<int:card_id>', methods=['GET'])
-@login_required # Use Flask-Login decorator
-def get_card(card_id):
+@token_required
+def get_card(card_id, current_user=None):
     user_id = current_user.id # Use Flask-Login proxy
     card = Card.query.get_or_404(card_id)
 
@@ -375,8 +398,8 @@ def get_card(card_id):
         return jsonify({"error": "Internal server error while fetching card details"}), 500
 
 @current_app.route('/cards/<int:card_id>', methods=['PUT'])
-@login_required # Use Flask-Login decorator
-def update_card(card_id):
+@token_required
+def update_card(card_id, current_user=None):
     user_id = current_user.id # Use Flask-Login proxy
     card = Card.query.get_or_404(card_id)
 
@@ -423,9 +446,9 @@ def update_card(card_id):
     return jsonify(card_data), 200
 
 @current_app.route('/cards/<int:card_id>', methods=['DELETE'])
-@login_required # Use Flask-Login decorator
-def delete_card(card_id):
-    user_id = current_user.id # Use Flask-Login proxy
+@token_required
+def delete_card(card_id, current_user=None):
+    user_id = current_user.id
     card = Card.query.get_or_404(card_id)
 
     # TODO: Add ownership check
@@ -438,8 +461,8 @@ def delete_card(card_id):
     return jsonify({"message": "Card deleted successfully"}), 200
 
 @current_app.route('/autocomplete-options', methods=['GET'])
-@login_required
-def get_autocomplete_options():
+@token_required
+def get_autocomplete_options(current_user=None):
     user_id = current_user.id
     
     try:
