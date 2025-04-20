@@ -8,17 +8,17 @@ load_dotenv(os.path.join(basedir, '.env')) # Load .env file
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess-this-dev-key'
     # Add Session Cookie settings for Flask-Login & CORS
-    # Default to secure settings for production
-    SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') != 'development'
+    # Force secure settings for deployment
+    SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True # Prevent JS access to cookie
     # 'None' is needed for cross-site requests (like Vercel frontend -> Render backend)
     # Requires Secure=True
-    SESSION_COOKIE_SAMESITE = 'None' if os.environ.get('FLASK_ENV') != 'development' else 'Lax'
+    SESSION_COOKIE_SAMESITE = 'None'
 
-    # Optionally, adjust REMEMBER_COOKIE settings similarly if you use "Remember Me"
-    REMEMBER_COOKIE_SECURE = os.environ.get('FLASK_ENV') != 'development'
+    # Force secure settings for REMEMBER_COOKIE as well
+    REMEMBER_COOKIE_SECURE = True
     REMEMBER_COOKIE_HTTPONLY = True
-    REMEMBER_COOKIE_SAMESITE = 'None' if os.environ.get('FLASK_ENV') != 'development' else 'Lax'
+    REMEMBER_COOKIE_SAMESITE = 'None'
     # eBay API Config from .env
     EBAY_APP_ID = os.environ.get('EBAY_APP_ID')
     EBAY_DEV_ID = os.environ.get('EBAY_DEV_ID')
