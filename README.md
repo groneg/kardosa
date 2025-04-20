@@ -24,4 +24,6 @@ Kardosa is a mobile-friendly web application designed to be a digital binder for
 
 ## Getting Started
 
-*(Instructions to be added later)* 
+*(Instructions to be added later)*
+
+# Trigger Vercel redeploy 
