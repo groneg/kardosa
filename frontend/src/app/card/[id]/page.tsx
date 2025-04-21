@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from "next/image";
+import { apiRequest } from '@/utils/api';
 
 interface Card {
   id: number;
@@ -92,20 +93,9 @@ export default function EditCardPage() {
   useEffect(() => {
     const fetchCard = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-        console.log(`Fetching card from: ${apiUrl}/cards/${params.id}`);
+        console.log(`Fetching card with ID: ${params.id}`);
         
-        const response = await fetch(`${apiUrl}/cards/${params.id}`, {
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`Error response: ${errorText}`);
-          throw new Error(`Failed to fetch card: ${response.status} ${errorText}`);
-        }
-
-        const data = await response.json();
+        const data = await apiRequest(`/cards/${params.id}`);
         console.log('Card data:', data);
         setCard(data);
       } catch (err) {
@@ -123,16 +113,7 @@ export default function EditCardPage() {
   useEffect(() => {
     const fetchAutocompleteOptions = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-        const response = await fetch(`${apiUrl}/autocomplete-options`, {
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch autocomplete options');
-        }
-
-        const data = await response.json();
+        const data = await apiRequest('/autocomplete-options');
         setAutocompleteOptions(data);
       } catch (err) {
         console.error('Error fetching autocomplete options:', err);
@@ -152,22 +133,11 @@ export default function EditCardPage() {
     setSaveSuccess(false);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${apiUrl}/cards/${card.id}`, {
+      const updatedCard = await apiRequest(`/cards/${card.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify(card),
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to update card: ${response.status} ${errorText}`);
-      }
-
-      const updatedCard = await response.json();
+      
       setCard(updatedCard);
       setSaveSuccess(true);
     } catch (err) {
@@ -199,16 +169,9 @@ export default function EditCardPage() {
       setIsDeleting(true);
       setDeleteError(null);
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-        const response = await fetch(`${apiUrl}/cards/${card.id}`, {
-          method: 'DELETE',
-          credentials: 'include',
+        await apiRequest(`/cards/${card.id}`, {
+          method: 'DELETE'
         });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to delete card: ${response.status} ${errorText}`);
-        }
 
         // On successful deletion, redirect to the home page
         router.push('/'); 
