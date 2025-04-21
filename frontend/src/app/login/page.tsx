@@ -37,10 +37,10 @@ export default function LoginPage() {
       // Login successful
       setSuccess(`Login successful! Redirecting to your collection...`);
       
-      // Store the JWT token in localStorage for header-based auth
+      // Store the UUID token in localStorage for header-based auth
       if (data.token) {
-        localStorage.setItem('jwt_token', data.token);
-        console.log("Login successful, JWT token stored in localStorage.");
+        localStorage.setItem('auth_token', data.token);
+        console.log("Login successful, UUID token stored in localStorage.");
       } else {
         console.log("Login successful, but no token received. Falling back to cookie auth.");
       }

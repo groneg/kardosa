@@ -67,8 +67,8 @@ export default function CardsPage() {
       await apiRequest('/logout', { method: 'POST' });
       console.log("Logout successful on backend.");
       
-      // Clear JWT token from localStorage
-      localStorage.removeItem('jwt_token');
+      // Clear UUID token from localStorage
+      localStorage.removeItem('auth_token');
       
       // Clear app state
       setCards([]); 
@@ -95,7 +95,7 @@ export default function CardsPage() {
     try {
       // For file uploads, we need to use fetch directly to support FormData
       // but we'll add the authorization header from our API utility
-      const token = localStorage.getItem('jwt_token');
+      const token = localStorage.getItem('auth_token');
       const headers: HeadersInit = {};
       
       if (token) {

@@ -6,16 +6,16 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 /**
- * Get the authentication headers including JWT token if available
+ * Get the authentication headers including UUID token if available
  */
 export const getAuthHeaders = (): HeadersInit => {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
 
-  // Add Authorization header with JWT token if available
+  // Add Authorization header with UUID token if available
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('jwt_token');
+    const token = localStorage.getItem('auth_token');
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }

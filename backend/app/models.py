@@ -1,5 +1,6 @@
 # Database models will be defined here using SQLAlchemy
 from datetime import datetime, timezone
+import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin # Import UserMixin
 from . import db  # Import the db instance from __init__.py
@@ -35,6 +36,24 @@ class User(db.Model, UserMixin): # Inherit from UserMixin
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def generate_auth_token(self, expiration_days=1):
+        """Generate a new UUID token for the user"""
+        # Create a new token with an expiration date
+        from datetime import datetime, timedelta
+        token_uuid = str(uuid.uuid4())
+        expiration = datetime.utcnow() + timedelta(days=expiration_days)
+        
+        # Create new token in database
+        token = Token(
+            token=token_uuid,
+            user_id=self.id,
+            expiration=expiration
+        )
+        db.session.add(token)
+        db.session.commit()
+        
+        return token_uuid
 
 
 class Card(db.Model):
@@ -74,6 +93,7 @@ class Card(db.Model):
     def __repr__(self):
         return f'<Card {self.card_year} {self.manufacturer} {self.player_name} {self.card_number or ""}>'
 
+
 # Potentially add Player and Team models here later for validation/enrichment
 
 class Team(db.Model):
@@ -105,3 +125,18 @@ class CardSet(db.Model):
 
     def __repr__(self):
         return f'<CardSet {self.name} ({self.year})>' 
+
+class Token(db.Model):
+    """Store authentication tokens"""
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(36), unique=True, nullable=False, index=True)  # UUID is 36 chars
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    expiration = db.Column(db.DateTime, nullable=False)
+    is_revoked = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship to user
+    user = db.relationship('User', backref=db.backref('tokens', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<Token {self.token[:8]}... (User: {self.user_id})>'
