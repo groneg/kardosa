@@ -43,4 +43,14 @@ yarn-error.log*
 
 # IDE/Editor directories
 .vscode/
-.idea/ 
+.idea/
+
+# Log files
+backend/flask.log
+frontend/next.log
+*.log
+
+# Backup files
+*.backup
+*~
+*.bak
