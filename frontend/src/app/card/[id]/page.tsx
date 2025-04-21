@@ -61,6 +61,9 @@ export default function EditCardPage() {
     grades: []
   });
   
+  // Define the backend API URL
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  
   // Add touch event handling for swipe navigation
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -199,7 +202,7 @@ export default function EditCardPage() {
         <div className="bg-white rounded-lg shadow-md p-4 mb-6 relative aspect-w-3 aspect-h-4">
           {card.image_url ? (
             <Image
-              src={card.image_url}
+              src={`${API_URL}${card.image_url}`}
               alt={`${card.card_year || ''} ${card.manufacturer || ''} ${card.player_name}`}
               fill
               style={{ objectFit: 'contain' }}

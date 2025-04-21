@@ -148,6 +148,11 @@ def upload_single_card_image(current_user):
             newly_saved_card = None
             save_error = None
             if mapped_data:
+                # Get the parent folder name (timestamp folder) and the filename
+                parent_folder = os.path.basename(os.path.dirname(save_path))
+                filename = os.path.basename(save_path)
+                # Fix image path to include /uploads and the timestamp folder
+                mapped_data['image_url'] = f"/uploads/{parent_folder}/{filename}"  # Use the user's original card image with correct path
                 newly_saved_card = save_card_from_data(mapped_data, user_id)
                 if not newly_saved_card:
                     save_error = "Failed to save mapped data to database."
@@ -194,76 +199,70 @@ def upload_binder_image(current_user):
         user_id = current_user.id
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
         unique_filename = f"{user_id}_{timestamp}_{filename}"
-        save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
-
-        processed_cards_results = [] # Store results for each card
-        errors = []
-
+        base_filename = os.path.splitext(unique_filename)[0]
+        split_output_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], base_filename + '_cards')
+        
         try:
+            # Save original binder image
+            save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
             file.save(save_path)
             print(f"Binder page saved to: {save_path}")
 
-            # --- Call GRID image splitting (with 3% crop) --- 
-            base_filename = os.path.splitext(unique_filename)[0]
-            split_output_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], base_filename + '_cards')
+            # Extract cards
             extracted_card_paths = split_binder_page_by_grid(save_path, split_output_dir, inner_crop_percent=3)
 
             if not extracted_card_paths:
-                errors.append("Failed to extract any cards from the binder page image (using grid method).")
-            else:
-                print(f"Extracted {len(extracted_card_paths)} potential card images. Processing each...")
-                # --- Process Each Extracted Card Synchronously ---
-                for i, card_path in enumerate(extracted_card_paths):
-                    print(f"--- Processing card {i+1} from {card_path} ---")
-                    try:
-                        # 1. eBay Lookup
-                        ebay_result = find_card_on_ebay(card_path)
-                        if not ebay_result:
-                            errors.append(f"Card {i+1}: eBay lookup failed.")
-                            continue
+                return jsonify({'error': 'Failed to extract cards from image'}), 400
 
-                        # 2. Data Mapping
-                        mapped_data = map_ebay_result_to_card_data(ebay_result)
-                        if not mapped_data:
-                            errors.append(f"Card {i+1}: Failed to map data from eBay result.")
-                            continue
+            processed_cards_results = []
+            errors = []
 
-                        # 3. Save to DB
-                        newly_saved_card = save_card_from_data(mapped_data, user_id)
-                        if newly_saved_card:
-                            processed_cards_results.append({
-                                'source_image': os.path.basename(card_path),
-                                'saved_card_id': newly_saved_card.id,
-                                'player_name': newly_saved_card.player_name
-                            })
-                        else:
-                            errors.append(f"Card {i+1}: Failed to save mapped data to database.")
+            for i, card_path in enumerate(extracted_card_paths):
+                try:
+                    # Get relative path for storage in DB
+                    relative_path = os.path.relpath(
+                        card_path, 
+                        current_app.config['UPLOAD_FOLDER']
+                    ).replace('\\', '/')
+                    
+                    # eBay lookup and processing
+                    ebay_result = find_card_on_ebay(card_path)
+                    if not ebay_result:
+                        errors.append(f"Card {i+1}: eBay lookup failed.")
+                        continue
 
-                    except Exception as card_e:
-                        error_msg = f"Card {i+1}: Unexpected error during processing: {card_e}"
-                        print(error_msg)
-                        errors.append(error_msg)
-                # --- End Processing Loop ---
+                    # Map data and save to DB
+                    mapped_data = map_ebay_result_to_card_data(ebay_result)
+                    if not mapped_data:
+                        errors.append(f"Card {i+1}: Failed to map data from eBay result.")
+                        continue
 
-            # Construct final response
-            response_status = 201 if processed_cards_results else (202 if errors else 200)
-            response_message = f"Binder processing complete. Saved {len(processed_cards_results)} cards."
-            if errors:
-                response_message += f" Encountered {len(errors)} errors."
+                    # Use the relative path for image_url, ensuring it has /uploads prefix
+                    mapped_data['image_url'] = f"/uploads/{relative_path}"
+                    newly_saved_card = save_card_from_data(mapped_data, user_id)
+                    
+                    if newly_saved_card:
+                        processed_cards_results.append({
+                            'source_image': relative_path,
+                            'saved_card_id': newly_saved_card.id,
+                            'player_name': newly_saved_card.player_name
+                        })
+                    else:
+                        errors.append(f"Card {i+1}: Failed to save to database.")
+
+                except Exception as card_e:
+                    errors.append(f"Card {i+1}: {str(card_e)}")
 
             return jsonify({
-                'message': response_message,
-                'original_filename': unique_filename,
+                'message': f"Processed {len(processed_cards_results)} cards successfully",
                 'saved_cards': processed_cards_results,
-                'processing_errors': errors
-            }), response_status
+                'errors': errors
+            }), 200
 
         except Exception as e:
-            # Handle exceptions during initial save or overall process
-            print(f"Error saving or processing binder file: {e}")
-            return jsonify({'error': 'Failed to save or process binder file on server'}), 500
-    else:
-        return jsonify({'error': 'File type not allowed'}), 400
+            return jsonify({'error': str(e)}), 500
+
+    return jsonify({'error': 'Invalid file type'}), 400
 
 # --- Card Management Routes (Flask-Login) ---
 
@@ -490,5 +489,10 @@ def get_autocomplete_options(current_user):
     except Exception as e:
         print(f"Error fetching autocomplete options: {e}")
         return jsonify({"error": "Internal server error while fetching autocomplete options"}), 500
+
+# Route to serve uploaded images
+@current_app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
 # Add more routes here as needed 

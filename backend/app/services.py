@@ -360,13 +360,6 @@ def map_ebay_result_to_card_data(ebay_result):
         else:
              mapped_data['grade'] = f"Condition: {condition}" # Store other conditions
 
-    # --- Get Image URL ---
-    # Use the thumbnail or primary image
-    if item.get('image') and item['image'].get('imageUrl'):
-        mapped_data['image_url'] = item['image'].get('imageUrl')
-    elif item.get('thumbnailImages') and item['thumbnailImages'][0].get('imageUrl'):
-        mapped_data['image_url'] = item['thumbnailImages'][0].get('imageUrl')
-
     # Basic validation - Now requires a *normalized* player name
     if not mapped_data['player_name']:
         print("Failed to find a matching player name in database from eBay data.")

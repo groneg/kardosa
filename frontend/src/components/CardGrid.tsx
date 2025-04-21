@@ -22,6 +22,7 @@ interface CardGridProps {
 
 const CardGrid: React.FC<CardGridProps> = ({ cards }) => {
   const router = useRouter();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
   if (!cards || cards.length === 0) {
     return <p className="text-center text-gray-500">No cards found.</p>;
@@ -42,7 +43,7 @@ const CardGrid: React.FC<CardGridProps> = ({ cards }) => {
           <div className="relative w-full h-48">
             {card.image_url ? (
               <Image
-                src={card.image_url}
+                src={`${API_URL}${card.image_url}`}
                 alt={`${card.card_year || ''} ${card.manufacturer || ''} ${card.player_name}`}
                 fill
                 style={{ objectFit: 'cover' }}
