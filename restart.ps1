@@ -79,13 +79,9 @@ Application URLs:" -ForegroundColor Green
 Write-Host "* Backend API: http://localhost:5000" -ForegroundColor Cyan
 Write-Host "* Frontend UI: http://localhost:3000" -ForegroundColor Cyan
 
-Write-Host "
-Would you like to open the application in your browser? (Y/N)" -ForegroundColor Yellow
-$openBrowser = Read-Host
-if ($openBrowser -eq 'Y' -or $openBrowser -eq 'y') {
-    Open-Browser "http://localhost:3000"
-    Write-Host "Opened http://localhost:3000 in your default browser" -ForegroundColor Green
-}
+# Automatically open the browser after displaying URLs
+Open-Browser "http://localhost:3000"
+Write-Host "Opened http://localhost:3000 in your default browser" -ForegroundColor Green
 
 Write-Host "
 To stop all servers, run:" -ForegroundColor Red
