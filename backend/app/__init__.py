@@ -50,13 +50,12 @@ def create_app(config_class=Config):
     # Choose origins based on environment
     origins = prod_origins if app.config.get('ENV') == 'production' else dev_origins
     
-    # Apply CORS configuration
+    # Apply CORS configuration - fixed to match working branch
     CORS(app,
-         origins=origins,  # Use the appropriate origins list
-         supports_credentials=True,  # Allow cookies/credentials
-         expose_headers=['Content-Type', 'Authorization'],
+         resources={r"/*": {"origins": origins}},  # Correct parameter structure
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         allow_headers=["Content-Type", "Authorization", "X-Requested-With"]
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+         supports_credentials=True  # Allow cookies/credentials
         )
 
     # Initialize Flask extensions here
