@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiRequest } from '@/utils/api';
 
 export default function HomePage() {
   const router = useRouter();
@@ -16,20 +17,12 @@ export default function HomePage() {
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
-        const response = await fetch(`${API_URL}/cards`, {
-          method: 'GET',
-          credentials: 'include'
-        });
-
-        if (response.ok) {
-          // User is authenticated, redirect to card collection
-          router.push('/cards');
-        } else {
-          // User is not authenticated, redirect to login
-          router.push('/login');
-        }
+        await apiRequest('/cards');
+        // If we get here without an error, user is authenticated
+        router.push('/cards');
       } catch (error) {
         console.error('Authentication check failed:', error);
+        // User is not authenticated, redirect to login
         router.push('/login');
       } finally {
         setIsLoading(false);

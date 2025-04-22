@@ -468,11 +468,16 @@ def get_autocomplete_options(current_user):
         # Get all cards for the current user
         user_cards = Card.query.filter_by(owner_id=user_id).all()
         
-        # Extract unique values for each field
+        # Extract unique values from user cards
         player_names = sorted(list(set(card.player_name for card in user_cards if card.player_name)))
         manufacturers = sorted(list(set(card.manufacturer for card in user_cards if card.manufacturer)))
-        teams = sorted(list(set(card.team for card in user_cards if card.team)))
+        user_teams = sorted(list(set(card.team for card in user_cards if card.team)))
         grades = sorted(list(set(card.grade for card in user_cards if card.grade)))
+        
+        # Get all teams from the database to provide complete options
+        all_teams = [team.name for team in Team.query.order_by(Team.name).all()]
+        # Combine user teams with all database teams (remove duplicates)
+        teams = sorted(list(set(user_teams + all_teams)))
         
         # Add some common grade options if not already present
         common_grades = ["Raw", "PSA 10", "PSA 9", "PSA 8", "PSA 7", "BGS 10", "BGS 9.5", "BGS 9", "SGC 10", "SGC 9"]

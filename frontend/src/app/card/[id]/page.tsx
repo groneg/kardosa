@@ -198,8 +198,8 @@ export default function EditCardPage() {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="w-full max-w-2xl">
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6 relative aspect-w-3 aspect-h-4">
+      <div className="w-full max-w-3xl">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6 relative" style={{ height: '500px' }}>
           {card.image_url ? (
             <Image
               src={`${API_URL}${card.image_url}`}
@@ -210,7 +210,7 @@ export default function EditCardPage() {
               priority
             />
           ) : (
-            <div className="w-full h-64 bg-gray-200 flex items-center justify-center text-gray-400 rounded-lg">
+            <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 rounded-lg">
               No Image Available
             </div>
           )}
@@ -269,7 +269,7 @@ export default function EditCardPage() {
                   name="card_year"
                   value={card.card_year || ''}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select a year</option>
                   {generateYearOptions().map((year) => (
@@ -320,7 +320,7 @@ export default function EditCardPage() {
               </div>
               
               <div>
-                <label htmlFor="team" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="team" className="block text-sm font-medium text-gray-700 mb-1">
                   Team
                 </label>
                 <select
@@ -328,7 +328,7 @@ export default function EditCardPage() {
                   name="team"
                   value={card.team || ''}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select a team</option>
                   {autocompleteOptions.teams.map((team) => (
@@ -360,15 +360,15 @@ export default function EditCardPage() {
               </div>
               
               <div>
-                <label htmlFor="sport" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="sport" className="block text-sm font-medium text-gray-700 mb-1">
                   League
                 </label>
                 <select
                   id="sport"
                   name="sport"
-                  value={card.sport || ''}
+                  value={card.sport || 'NBA'}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select a League</option>
                   <option value="NBA">NBA</option>
