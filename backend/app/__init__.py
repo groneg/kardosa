@@ -45,7 +45,7 @@ def create_app(config_class=Config):
         dev_origins.append(f'http://127.0.0.1:{port}')
 
     # Production origins
-    prod_origins = ['https://kardosa.xyz']
+    prod_origins = ['https://kardosa.xyz', 'https://www.kardosa.xyz']
     
     # Choose origins based on environment
     origins = prod_origins if app.config.get('ENV') == 'production' else dev_origins
@@ -53,9 +53,10 @@ def create_app(config_class=Config):
     # Apply CORS configuration
     CORS(app,
          origins=origins,  # Use the appropriate origins list
+         supports_credentials=True,  # Allow cookies/credentials
+         expose_headers=['Content-Type', 'Authorization'],
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-         supports_credentials=True  # Allow cookies/credentials
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With"]
         )
 
     # Initialize Flask extensions here
