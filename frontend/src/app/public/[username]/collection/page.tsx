@@ -23,7 +23,7 @@ export default function PublicCollectionPage() {
   useEffect(() => {
     async function fetchCollection() {
       try {
-        const res = await fetch(`/backend/public/collection/${username}`);
+        const res = await fetch(`https://api.kardosa.xyz/public/collection/${username}`);
         if (!res.ok) throw new Error('Could not load collection');
         const data = await res.json();
         setCards(data.cards);
