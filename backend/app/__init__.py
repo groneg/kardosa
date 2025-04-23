@@ -54,6 +54,15 @@ def create_app(config_class=Config):
     import sys
     print(f"[KARDOSA CORS DEBUG] ENV: {app.config.get('ENV')}", file=sys.stderr)
     print(f"[KARDOSA CORS DEBUG] Using CORS origins: {origins}", file=sys.stderr)
+
+    # Ensure uploads directory exists
+    import os
+    uploads_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'uploads')
+    uploads_dir = os.path.abspath(uploads_dir)
+    if not os.path.exists(uploads_dir):
+        os.makedirs(uploads_dir)
+    print(f"[KARDOSA INIT] Ensured uploads directory exists at: {uploads_dir}", file=sys.stderr)
+
     
     # *** PRODUCTION CORS FIX - RESTRICTED ORIGINS ***
     CORS(app, resources={r'/*': {'origins': origins}}, supports_credentials=True)
