@@ -66,16 +66,6 @@ def create_app(config_class=Config):
             'init_py_loaded': True
         })
     
-    # Force CORS headers on all responses as middleware
-    @app.after_request
-    def add_cors_headers(response):
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization,X-Requested-With'
-        response.headers['Access-Control-Allow-Methods'] = 'GET,POST,PUT,DELETE,OPTIONS'
-        response.headers['Access-Control-Allow-Credentials'] = 'true'
-        # Visual breadcrumb in headers
-        response.headers['X-Emergency-CORS-Fix'] = 'Active-2025-04-22'
-        return response
 
     # Initialize Flask extensions here
     db.init_app(app)
