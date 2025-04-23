@@ -44,20 +44,16 @@ def create_app(config_class=Config):
         dev_origins.append(f'http://localhost:{port}')
         dev_origins.append(f'http://127.0.0.1:{port}')
 
-    # Production origins
-    prod_origins = ['https://kardosa.xyz', 'https://www.kardosa.xyz']
-    
-    # Choose origins based on environment
-    origins = prod_origins if app.config.get('ENV') == 'production' else dev_origins
-    
-    # Apply CORS configuration
-    CORS(app,
-         origins=origins,  # Use the appropriate origins list
-         supports_credentials=True,  # Allow cookies/credentials
-         expose_headers=['Content-Type', 'Authorization'],
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         allow_headers=["Content-Type", "Authorization", "X-Requested-With"]
-        )
+    # Add middleware to force permissive headers on every response
+    @app.after_request
+    def after_request(response):
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        # Debug marker to confirm this code is running
+        response.headers.add('X-Debug-Version', 'INIT-CORS-FIX-1')
+        return response
 
     # Initialize Flask extensions here
     db.init_app(app)
