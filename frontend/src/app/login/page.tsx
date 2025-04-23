@@ -7,13 +7,11 @@ import { apiRequest } from '../../utils/api';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-
-  // API_URL is now handled in the apiRequest utility
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -22,10 +20,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // The backend /login expects 'username' key
-      // In a real app, backend might accept 'email' too, or frontend determines type
       const loginPayload = {
-        username: email, // Send email as username for now
+        username: identifier,
         password: password,
       };
 
@@ -34,10 +30,7 @@ export default function LoginPage() {
         body: JSON.stringify(loginPayload)
       });
 
-      // Login successful
       setSuccess(`Login successful! Redirecting to your collection...`);
-      
-      // Store the UUID token in localStorage for header-based auth
       if (data.token) {
         localStorage.setItem('auth_token', data.token);
         console.log("Login successful, UUID token stored in localStorage.");
@@ -45,11 +38,9 @@ export default function LoginPage() {
         console.log("Login successful, but no token received. Falling back to cookie auth.");
       }
 
-      // Clear form
-      setEmail('');
+      setIdentifier('');
       setPassword('');
 
-      // Redirect to cards page after a short delay to show success message
       setTimeout(() => {
         router.push('/cards');
       }, 1000);
@@ -68,12 +59,12 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-center mb-6">Login</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+            <label htmlFor="identifier" className="block text-sm font-medium text-gray-700">Username</label>
             <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              id="identifier"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
@@ -103,13 +94,14 @@ export default function LoginPage() {
             </button>
           </div>
           <div className="text-sm font-medium text-gray-500 dark:text-gray-300 mt-4">
-            Not registered? <a href="/register" className="text-red-600 hover:underline dark:text-red-500">Create account</a>
-          </div>
-          <div className="text-sm font-medium text-gray-500 dark:text-gray-300 mt-4">
             Return to <Link href="/" className="text-red-600 hover:underline dark:text-red-500">Home Page</Link>
           </div>
         </form>
+        <div className="mt-4 text-center">
+          <span className="text-gray-600 text-sm">Don't have an account? </span>
+          <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">Register</Link>
+        </div>
       </div>
     </main>
   );
-} 
+}
