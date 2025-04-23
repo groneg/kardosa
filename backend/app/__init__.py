@@ -47,8 +47,8 @@ def create_app(config_class=Config):
     # Production origins
     prod_origins = ['https://kardosa.xyz', 'https://www.kardosa.xyz']
     
-    # Choose origins based on environment
-    origins = prod_origins if app.config.get('ENV') == 'production' else dev_origins
+    # FORCE PRODUCTION ORIGINS FOR CORS (emergency fix)
+    origins = ['https://kardosa.xyz', 'https://www.kardosa.xyz']
     
     # DEBUG: Print environment and origins at startup
     import sys
