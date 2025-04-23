@@ -47,16 +47,17 @@ def register():
 @current_app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    if not data or not data.get('username') or not data.get('password'):
-        return jsonify({'error': 'Missing username or password'}), 400
+    # Accept either username or email as the identifier
+    identifier = data.get('username') or data.get('email')
+    if not data or not identifier or not data.get('password'):
+        return jsonify({'error': 'Missing username/email or password'}), 400
 
     # --- Debugging --- 
-    print(f"Attempting login for username: '{data.get('username')}'")
+    print(f"Attempting login for identifier: '{identifier}'")
     print(f"Password received (type: {type(data.get('password'))}): '{data.get('password')}'")
     # ----------------
-    
-    login_identifier = data['username'] # Input can be username or email
-    user = User.query.filter((User.username == login_identifier) | (User.email == login_identifier)).first()
+
+    user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
 
     # --- Debugging --- 
     if user:
@@ -263,6 +264,30 @@ def upload_binder_image(current_user):
             return jsonify({'error': str(e)}), 500
 
     return jsonify({'error': 'Invalid file type'}), 400
+
+# --- Public Read-Only Collection Route ---
+
+@current_app.route('/public/collection/<username>', methods=['GET'])
+def public_collection(username):
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    # Get all cards for this user
+    cards = Card.query.filter_by(user_id=user.id).all()
+    # Serialize cards, excluding sensitive/user-only fields
+    card_list = [
+        {
+            'id': card.id,
+            'name': card.name,
+            'team': card.team_name,
+            'player': card.player_name,
+            'year': card.year,
+            'image_url': card.image_url,
+            'created_at': card.created_at.isoformat() if card.created_at else None,
+            # Add other public fields as needed
+        } for card in cards
+    ]
+    return jsonify({'username': user.username, 'cards': card_list}), 200
 
 # --- Card Management Routes (Flask-Login) ---
 
