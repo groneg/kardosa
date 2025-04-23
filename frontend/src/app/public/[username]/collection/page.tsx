@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+
 import { useParams } from 'next/navigation';
 
 interface Card {
@@ -27,7 +27,7 @@ export default function PublicCollectionPage() {
         if (!res.ok) throw new Error('Could not load collection');
         const data = await res.json();
         setCards(data.cards);
-      } catch (err) {
+      } catch {
         setError('Could not load collection');
       } finally {
         setLoading(false);
