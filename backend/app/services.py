@@ -92,17 +92,16 @@ def normalize_player_name(extracted_name, min_score=85):
         print(f"Warning: No good fuzzy match found for player '{extracted_name}' (Best: '{match}', Score: {score} < {min_score}).")
         return None # Indicate no confident match found
 
-def normalize_team_name(extracted_name):
-    """Finds a matching team name from the cached map."
-    """
+def normalize_team_name(extracted_name, min_score=85):
+    """Finds a matching team name from the cached map, using fuzzy match if needed."""
     if not _TEAM_MAP:
-         print("Warning: Team map cache is empty. Call load_reference_data_cache() first.")
-         # Attempt direct DB query as fallback
-         team = Team.query.filter(
-             (Team.abbreviation.ilike(extracted_name)) |
-             (Team.name.ilike(f'%{extracted_name}%'))
-         ).first()
-         return team.name if team else extracted_name # Return original if no fallback match
+        print("Warning: Team map cache is empty. Call load_reference_data_cache() first.")
+        # Attempt direct DB query as fallback
+        team = Team.query.filter(
+            (Team.abbreviation.ilike(extracted_name)) |
+            (Team.name.ilike(f'%{extracted_name}%'))
+        ).first()
+        return team.name if team else extracted_name # Return original if no fallback match
 
     # Check abbreviation first, then lowercase name
     normalized_name = _TEAM_MAP.get(extracted_name)
@@ -111,6 +110,24 @@ def normalize_team_name(extracted_name):
     normalized_name = _TEAM_MAP.get(extracted_name.lower())
     if normalized_name:
         return normalized_name
+
+    # --- Partial/inclusive match before fuzzy ---
+    for team in _TEAM_MAP.values():
+        if extracted_name.lower() in team.lower() or team.lower() in extracted_name.lower():
+            print(f"Partial matched team '{extracted_name}' to '{team}'")
+            return team
+
+    # --- Fuzzy match if no direct or partial match found ---
+    team_names = list(_TEAM_MAP.values())
+    match = None
+    score = 0
+    if team_names:
+        match, score = fuzzy_process.extractOne(extracted_name, team_names)
+        if score >= min_score:
+            print(f"Fuzzy matched team '{extracted_name}' to '{match}' with score {score}")
+            return match
+        else:
+            print(f"Warning: No good fuzzy match found for team '{extracted_name}' (Best: '{match}', Score: {score} < {min_score}).")
 
     print(f"Warning: Team '{extracted_name}' not found in reference map.")
     return extracted_name # Return original if not found
