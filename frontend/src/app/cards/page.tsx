@@ -129,6 +129,47 @@ export default function CardsPage() {
     }
   };
 
+  // --- Loosie (Single Card) Upload Handler ---
+  const handleLoosieFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadError(null);
+    setUploadSuccess(null);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`${API_URL}/upload-single-card`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+        headers
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
+      }
+      const data = await response.json();
+      setUploadSuccess(data.message || 'Single card uploaded successfully');
+      window.location.reload();
+    } catch (err) {
+      console.error('Single card upload error:', err);
+      setUploadError(err instanceof Error ? err.message : 'Failed to upload single card');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -201,6 +242,23 @@ export default function CardsPage() {
               disabled={uploading}
               className="hidden"
               title="Upload Binder Page"
+            />
+
+            {/* Add Loosies Button */}
+            <label
+              htmlFor="loosie-upload"
+              className="ml-4 px-4 py-2 bg-white text-blue-600 border-2 border-blue-600 rounded-full font-bold text-sm hover:bg-blue-50 cursor-pointer"
+            >
+              Add Loosies
+            </label>
+            <input
+              id="loosie-upload"
+              type="file"
+              accept="image/png, image/jpeg, image/webp"
+              onChange={handleLoosieFileChange}
+              disabled={uploading}
+              className="hidden"
+              title="Upload Single Card (Loosie)"
             />
             {uploading && <span className="ml-4 text-blue-600">Uploading...</span>}
           </div>
