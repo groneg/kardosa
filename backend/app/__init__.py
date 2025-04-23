@@ -50,8 +50,8 @@ def create_app(config_class=Config):
     # Choose origins based on environment
     origins = prod_origins if app.config.get('ENV') == 'production' else dev_origins
     
-    # *** EMERGENCY CORS FIX - FULLY PERMISSIVE ***
-    CORS(app, resources={r'/*': {'origins': '*'}}, supports_credentials=True)
+    # *** PRODUCTION CORS FIX - RESTRICTED ORIGINS ***
+    CORS(app, resources={r'/*': {'origins': origins}}, supports_credentials=True)
     
     # Visual breadcrumb to confirm this is being loaded
     @app.route('/cors-debug')
