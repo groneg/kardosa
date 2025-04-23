@@ -44,15 +44,37 @@ def create_app(config_class=Config):
         dev_origins.append(f'http://localhost:{port}')
         dev_origins.append(f'http://127.0.0.1:{port}')
 
-    # Add middleware to force permissive headers on every response
+    # Production origins
+    prod_origins = ['https://kardosa.xyz', 'https://www.kardosa.xyz']
+    
+    # Choose origins based on environment
+    origins = prod_origins if app.config.get('ENV') == 'production' else dev_origins
+    
+    # *** EMERGENCY CORS FIX - FULLY PERMISSIVE ***
+    CORS(app, resources={r'/*': {'origins': '*'}}, supports_credentials=True)
+    
+    # Visual breadcrumb to confirm this is being loaded
+    @app.route('/cors-debug')
+    def cors_debug_info():
+        from flask import jsonify
+        import os, datetime
+        return jsonify({
+            'status': '*** EMERGENCY CORS FIX ACTIVE ***',
+            'timestamp': str(datetime.datetime.now()),
+            'environment': app.config.get('ENV'),
+            'cors_info': 'All origins (*) allowed',
+            'init_py_loaded': True
+        })
+    
+    # Force CORS headers on all responses as middleware
     @app.after_request
-    def after_request(response):
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        # Debug marker to confirm this code is running
-        response.headers.add('X-Debug-Version', 'INIT-CORS-FIX-1')
+    def add_cors_headers(response):
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization,X-Requested-With'
+        response.headers['Access-Control-Allow-Methods'] = 'GET,POST,PUT,DELETE,OPTIONS'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        # Visual breadcrumb in headers
+        response.headers['X-Emergency-CORS-Fix'] = 'Active-2025-04-22'
         return response
 
     # Initialize Flask extensions here
