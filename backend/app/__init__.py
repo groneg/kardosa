@@ -50,19 +50,25 @@ def create_app(config_class=Config):
     # Choose origins based on environment
     origins = prod_origins if app.config.get('ENV') == 'production' else dev_origins
     
+    # DEBUG: Print environment and origins at startup
+    import sys
+    print(f"[KARDOSA CORS DEBUG] ENV: {app.config.get('ENV')}", file=sys.stderr)
+    print(f"[KARDOSA CORS DEBUG] Using CORS origins: {origins}", file=sys.stderr)
+    
     # *** PRODUCTION CORS FIX - RESTRICTED ORIGINS ***
     CORS(app, resources={r'/*': {'origins': origins}}, supports_credentials=True)
     
     # Visual breadcrumb to confirm this is being loaded
     @app.route('/cors-debug')
     def cors_debug_info():
-        from flask import jsonify
+        from flask import jsonify, request
         import os, datetime
         return jsonify({
-            'status': '*** EMERGENCY CORS FIX ACTIVE ***',
+            'status': 'CORS config check',
             'timestamp': str(datetime.datetime.now()),
             'environment': app.config.get('ENV'),
-            'cors_info': 'All origins (*) allowed',
+            'origins': origins,
+            'request_origin': request.headers.get('Origin'),
             'init_py_loaded': True
         })
     
