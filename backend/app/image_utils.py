@@ -119,6 +119,12 @@ def split_binder_page(image_path, output_dir,
                 card_roi = img[y_start:y_end, x_start:x_end]
 
                 if card_roi.size > 0:
+                    # --- Blank Card Detection ---
+                    gray_roi = cv2.cvtColor(card_roi, cv2.COLOR_BGR2GRAY)
+                    variance = np.var(gray_roi)
+                    if variance < 15:  # Threshold for blank slot (tune as needed)
+                        print(f"Blank card slot detected for card {i+1} (variance={variance:.2f}), skipping.")
+                        continue
                     card_filename = f"card_{i+1}.png"
                     card_save_path = os.path.join(output_dir, card_filename)
                     cv2.imwrite(card_save_path, card_roi)
@@ -201,6 +207,12 @@ def split_binder_page_by_grid(image_path, output_dir, inner_crop_percent=5):
                 card_roi = img[roi_y_start:roi_y_end, roi_x_start:roi_x_end]
 
                 if card_roi.size > 0:
+                    # --- Blank Card Detection ---
+                    gray_roi = cv2.cvtColor(card_roi, cv2.COLOR_BGR2GRAY)
+                    variance = np.var(gray_roi)
+                    if variance < 15:  # Threshold for blank slot (tune as needed)
+                        print(f"Blank card slot detected for card {card_index} (variance={variance:.2f}), skipping.")
+                        continue
                     card_filename = f"card_{card_index}.png"
                     card_save_path = os.path.join(output_dir, card_filename)
                     cv2.imwrite(card_save_path, card_roi)
