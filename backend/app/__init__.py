@@ -70,13 +70,14 @@ def create_app(config_class=Config):
     print(f"[KARDOSA CORS DEBUG] ENV: {env}", file=sys.stderr)
     print(f"[KARDOSA CORS DEBUG] Using CORS origins: {origins}", file=sys.stderr)
 
-    # Use UPLOAD_FOLDER from environment, default to '/tmp/uploads' for cloud, else local 'uploads' directory
-    default_upload_dir = '/tmp/uploads' if os.environ.get('RENDER', None) or os.environ.get('DYNO', None) else os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'uploads')
-    app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER') or default_upload_dir
+    # Use persistent disk on Render, fallback to local uploads dir in dev
+    render_upload_path = '/opt/render/project/src/backend/uploads'
+    local_upload_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'uploads')
+    app.config['UPLOAD_FOLDER'] = render_upload_path if os.path.exists(render_upload_path) else local_upload_path
 
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         try:
-            os.makedirs(app.config['UPLOAD_FOLDER'])
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
             print(f"[KARDOSA INIT] Ensured uploads directory exists at: {app.config['UPLOAD_FOLDER']}", file=sys.stderr)
         except OSError as e:
             print(f"[KARDOSA INIT WARNING] Could not create uploads directory at {app.config['UPLOAD_FOLDER']}: {e}", file=sys.stderr)
