@@ -31,6 +31,10 @@ export default function CardsPage() {
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [username, setUsername] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [estimatedTotalTime, setEstimatedTotalTime] = useState<number>(0);
+  const [progressIntervalId, setProgressIntervalId] = useState<NodeJS.Timeout | null>(null);
+  const [numUploadingFiles, setNumUploadingFiles] = useState<number>(0);
 
   // Define the backend API URL
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -82,52 +86,81 @@ export default function CardsPage() {
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    if (files.length > 5) {
+      setUploadError('You can only upload up to 5 binder images at a time.');
+      // Clear the file input
+      e.target.value = '';
+      return;
+    }
 
     setUploading(true);
     setUploadError(null);
     setUploadSuccess(null);
-
-    const formData = new FormData();
-    formData.append('file', file);
+    setNumUploadingFiles(files.length);
+    const totalSeconds = files.length * 20;
+    setEstimatedTotalTime(totalSeconds);
+    setUploadProgress(0);
+    // Simulate progress bar
+    let elapsed = 0;
+    const interval = setInterval(() => {
+      elapsed += 0.5;
+      setUploadProgress(Math.min(100, Math.round((elapsed / totalSeconds) * 100)));
+      if (elapsed >= totalSeconds) {
+        clearInterval(interval);
+      }
+    }, 500);
+    setProgressIntervalId(interval);
 
     try {
-      // For file uploads, we need to use fetch directly to support FormData
-      // but we'll add the authorization header from our API utility
-      const token = localStorage.getItem('auth_token');
-      const headers: HeadersInit = {};
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetch(`${API_URL}/upload-binder`, {
-        method: 'POST',
-        body: formData,
-  
-        headers
-      });
+      // Sequentially upload each file
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData();
+        formData.append('file', files[i]);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
+        const token = localStorage.getItem('auth_token');
+        const headers: HeadersInit = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${API_URL}/upload-binder`, {
+          method: 'POST',
+          body: formData,
+          headers
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
+        }
       }
 
-      const data = await response.json();
-      setUploadSuccess(data.message || 'File uploaded successfully');
-      
-      // Refresh the cards list after successful upload
+      setUploadSuccess('All binder images uploaded successfully');
       window.location.reload();
     } catch (err) {
       console.error('File upload error:', err);
-      setUploadError(err instanceof Error ? err.message : 'Failed to upload file');
+      setUploadError(err instanceof Error ? err.message : 'Failed to upload file(s)');
     } finally {
       setUploading(false);
+      setUploadProgress(0);
+      setEstimatedTotalTime(0);
+      setNumUploadingFiles(0);
+      if (progressIntervalId) clearInterval(progressIntervalId);
       // Clear the file input
       e.target.value = '';
     }
   };
+
+  // Clean up interval if component unmounts or uploading changes
+  useEffect(() => {
+    return () => {
+      if (progressIntervalId) clearInterval(progressIntervalId);
+    };
+  }, [progressIntervalId]);
+
 
   // --- Loosie (Single Card) Upload Handler ---
   const handleLoosieFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -232,16 +265,17 @@ export default function CardsPage() {
               htmlFor="binder-upload" 
               className="px-4 py-2 bg-white text-red-500 border-2 border-red-500 rounded-full font-bold text-sm hover:bg-red-50 cursor-pointer"
             >
-              Choose Binder Image
+              Choose Binder Images (up to 5)
             </label>
             <input
               id="binder-upload"
               type="file"
               accept="image/png, image/jpeg, image/webp"
+              multiple
               onChange={handleFileChange}
               disabled={uploading}
               className="hidden"
-              title="Upload Binder Page"
+              title="Upload up to 5 Binder Images"
             />
 
             {/* Add Loosies Button */}
@@ -260,8 +294,20 @@ export default function CardsPage() {
               className="hidden"
               title="Upload Single Card (Loosie)"
             />
-            {uploading && <span className="ml-4 text-blue-600">Uploading...</span>}
           </div>
+          {uploading && (
+            <div className="mt-2 flex items-center gap-4">
+              <div className="w-64 bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div
+                  className="bg-blue-600 h-3 rounded-full transition-all duration-200"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+              <span className="text-blue-600 text-sm font-semibold">
+                Processing ({numUploadingFiles} image{numUploadingFiles !== 1 ? 's' : ''}, ~{estimatedTotalTime}s)
+              </span>
+            </div>
+          )}
           {uploadError && <p className="text-sm text-red-600 mt-2">Upload Error: {uploadError}</p>}
           {uploadSuccess && <p className="text-sm text-green-600 mt-2">{uploadSuccess}</p>}
           
