@@ -515,8 +515,8 @@ def get_autocomplete_options(current_user):
         # Get all cards for the current user
         user_cards = Card.query.filter_by(owner_id=user_id).all()
         
-        # Extract unique values from user cards
-        player_names = sorted(list(set(card.player_name for card in user_cards if card.player_name)))
+        # Use all players from the Player table for comprehensive autocomplete
+        player_names = [p.full_name for p in Player.query.order_by(Player.full_name).all()]
         manufacturers = sorted(list(set(card.manufacturer for card in user_cards if card.manufacturer)))
         grades = sorted(list(set(card.grade for card in user_cards if card.grade)))
 
