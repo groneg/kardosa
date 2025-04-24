@@ -4,6 +4,23 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import CardGrid from '@/components/CardGrid';
 
+// Type for backend card object
+interface BackendCard {
+  id: number;
+  player?: string;
+  player_name?: string;
+  year?: string;
+  card_year?: string;
+  manufacturer?: string;
+  card_number?: string;
+  team?: string;
+  grade?: string;
+  image_url?: string;
+  date_added?: string;
+  notes?: string;
+  is_rookie?: boolean;
+}
+
 // Card type matching CardGrid
 interface Card {
   id: number;
@@ -34,7 +51,8 @@ export default function PublicCollectionPage() {
         if (!res.ok) throw new Error('Could not load collection');
         const data = await res.json();
         // Map backend fields to CardGrid Card interface if needed
-        setCards(data.cards.map((c: any) => ({
+        if (!Array.isArray(data.cards)) throw new Error('Invalid cards data');
+        setCards((data.cards as BackendCard[]).map((c) => ({
           id: c.id,
           player_name: c.player || c.player_name || '',
           card_year: c.year || c.card_year || null,

@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Image from 'next/image';
 
 export interface Card {
   id: number;
@@ -50,14 +49,7 @@ export function CardCollectionView({ cards, readOnly = false }: CardCollectionVi
           filtered.map(card => (
             <div key={card.id} className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
               {card.image_url && (
-                <Image
-                  src={card.image_url}
-                  alt={card.player}
-                  className="object-cover rounded shadow"
-                  width={300}
-                  height={220}
-                  style={{ width: '100%', height: 'auto', maxHeight: 220 }}
-                />
+                <img src={card.image_url} alt={card.player} className="w-32 h-48 object-cover mb-2 rounded" />
               )}
               <div className="font-bold text-lg mb-1">{card.player}</div>
               <div className="text-sm text-gray-700">{card.team || <span className="italic text-gray-400">No team</span>}</div>
