@@ -70,13 +70,16 @@ def create_app(config_class=Config):
     print(f"[KARDOSA CORS DEBUG] ENV: {env}", file=sys.stderr)
     print(f"[KARDOSA CORS DEBUG] Using CORS origins: {origins}", file=sys.stderr)
 
-    # Use UPLOAD_FOLDER from environment, default to local 'uploads' directory
-    import os
-    app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER') or os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'uploads')
-    # Ensure uploads directory exists (for local only)
+    # Use UPLOAD_FOLDER from environment, default to '/tmp/uploads' for cloud, else local 'uploads' directory
+    default_upload_dir = '/tmp/uploads' if os.environ.get('RENDER', None) or os.environ.get('DYNO', None) else os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'uploads')
+    app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER') or default_upload_dir
+
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        os.makedirs(app.config['UPLOAD_FOLDER'])
-    print(f"[KARDOSA INIT] Ensured uploads directory exists at: {app.config['UPLOAD_FOLDER']}", file=sys.stderr)
+        try:
+            os.makedirs(app.config['UPLOAD_FOLDER'])
+            print(f"[KARDOSA INIT] Ensured uploads directory exists at: {app.config['UPLOAD_FOLDER']}", file=sys.stderr)
+        except OSError as e:
+            print(f"[KARDOSA INIT WARNING] Could not create uploads directory at {app.config['UPLOAD_FOLDER']}: {e}", file=sys.stderr)
 
     
     # *** PRODUCTION CORS FIX - RESTRICTED ORIGINS ***
