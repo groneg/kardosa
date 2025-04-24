@@ -105,7 +105,7 @@ export default function CardsPage() {
       const response = await fetch(`${API_URL}/upload-binder`, {
         method: 'POST',
         body: formData,
-        credentials: 'include',
+  
         headers
       });
 
@@ -150,7 +150,7 @@ export default function CardsPage() {
       const response = await fetch(`${API_URL}/upload-single-card`, {
         method: 'POST',
         body: formData,
-        credentials: 'include',
+  
         headers
       });
       if (!response.ok) {

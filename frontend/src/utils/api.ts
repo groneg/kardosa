@@ -37,7 +37,7 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
       ...getAuthHeaders(),
       ...options.headers,
     },
-    credentials: 'include', // Still include credentials for cookie fallback during migration
+
   };
 
   try {

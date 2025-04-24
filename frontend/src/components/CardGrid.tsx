@@ -18,9 +18,11 @@ interface Card {
 
 interface CardGridProps {
   cards: Card[];
+  readOnly?: boolean;
+  onCardClick?: (cardId: number) => void;
 }
 
-const CardGrid: React.FC<CardGridProps> = ({ cards }) => {
+const CardGrid: React.FC<CardGridProps> = ({ cards, readOnly = false, onCardClick }) => {
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -29,7 +31,11 @@ const CardGrid: React.FC<CardGridProps> = ({ cards }) => {
   }
 
   const handleCardClick = (cardId: number) => {
-    router.push(`/card/${cardId}`);
+    if (readOnly && onCardClick) {
+      onCardClick(cardId);
+    } else if (!readOnly) {
+      router.push(`/card/${cardId}`);
+    }
   };
 
   return (
@@ -37,18 +43,21 @@ const CardGrid: React.FC<CardGridProps> = ({ cards }) => {
       {cards.map((card) => (
         <div
           key={card.id}
-          className="border rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer bg-white"
+          className={
+            "border rounded-lg overflow-hidden shadow-md bg-white" +
+            (readOnly ? "" : " hover:shadow-lg transition-shadow cursor-pointer")
+          }
           onClick={() => handleCardClick(card.id)}
+          style={readOnly ? { cursor: "default" } : {}}
         >
           <div className="relative w-full h-48">
             {card.image_url ? (
               <Image
                 src={`${API_URL}${card.image_url}`}
-                alt={`${card.card_year || ''} ${card.manufacturer || ''} ${card.player_name}`}
+                alt={card.player_name}
                 fill
                 style={{ objectFit: 'cover' }}
-                className=""
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="rounded"
               />
             ) : (
               <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">

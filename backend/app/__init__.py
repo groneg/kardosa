@@ -47,21 +47,36 @@ def create_app(config_class=Config):
     # Production origins
     prod_origins = ['https://kardosa.xyz', 'https://www.kardosa.xyz']
     
-    # FORCE PRODUCTION ORIGINS FOR CORS (emergency fix)
-    origins = ['https://kardosa.xyz', 'https://www.kardosa.xyz']
-    
-    # DEBUG: Print environment and origins at startup
+    import os
     import sys
-    print(f"[KARDOSA CORS DEBUG] ENV: {app.config.get('ENV')}", file=sys.stderr)
+    # Detect environment (use FLASK_ENV or ENV)
+    env = os.environ.get('FLASK_ENV') or app.config.get('ENV') or 'production'
+
+    if env == 'production':
+        origins = ['https://kardosa.xyz', 'https://www.kardosa.xyz']
+    else:
+        # Local dev: allow localhost and 127.0.0.1 on any port
+        origins = [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:8080",
+            "http://127.0.0.1:8080",
+        ]
+        # Optionally add wildcard ports for local dev
+        for port in range(50000, 60000):
+            origins.append(f'http://localhost:{port}')
+            origins.append(f'http://127.0.0.1:{port}')
+
+    print(f"[KARDOSA CORS DEBUG] ENV: {env}", file=sys.stderr)
     print(f"[KARDOSA CORS DEBUG] Using CORS origins: {origins}", file=sys.stderr)
 
-    # Ensure uploads directory exists
+    # Use UPLOAD_FOLDER from environment, default to local 'uploads' directory
     import os
-    uploads_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'uploads')
-    uploads_dir = os.path.abspath(uploads_dir)
-    if not os.path.exists(uploads_dir):
-        os.makedirs(uploads_dir)
-    print(f"[KARDOSA INIT] Ensured uploads directory exists at: {uploads_dir}", file=sys.stderr)
+    app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER') or os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'uploads')
+    # Ensure uploads directory exists (for local only)
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
+    print(f"[KARDOSA INIT] Ensured uploads directory exists at: {app.config['UPLOAD_FOLDER']}", file=sys.stderr)
 
     
     # *** PRODUCTION CORS FIX - RESTRICTED ORIGINS ***

@@ -273,21 +273,44 @@ def public_collection(username):
     if not user:
         return jsonify({'error': 'User not found'}), 404
     # Get all cards for this user
-    cards = Card.query.filter_by(user_id=user.id).all()
+    cards = Card.query.filter_by(owner_id=user.id).all()
     # Serialize cards, excluding sensitive/user-only fields
     card_list = [
         {
             'id': card.id,
-            'name': card.name,
-            'team': card.team_name,
             'player': card.player_name,
-            'year': card.year,
+            'team': card.team,
+            'year': card.card_year,
+            'manufacturer': card.manufacturer,
             'image_url': card.image_url,
-            'created_at': card.created_at.isoformat() if card.created_at else None,
+            'date_added': card.date_added.isoformat() if card.date_added else None,
             # Add other public fields as needed
         } for card in cards
     ]
     return jsonify({'username': user.username, 'cards': card_list}), 200
+
+@current_app.route('/public/collection/<username>/<int:card_id>', methods=['GET'])
+def public_card_detail(username, card_id):
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    card = Card.query.filter_by(id=card_id, owner_id=user.id).first()
+    if not card:
+        return jsonify({'error': 'Card not found'}), 404
+    card_data = {
+        'id': card.id,
+        'player_name': card.player_name,
+        'card_year': card.card_year,
+        'manufacturer': card.manufacturer,
+        'card_number': card.card_number,
+        'team': card.team,
+        'grade': card.grade,
+        'image_url': card.image_url,
+        'date_added': card.date_added.isoformat() if card.date_added else None,
+        'notes': card.notes,
+        'sport': getattr(card, 'sport', None)
+    }
+    return jsonify({'card': card_data}), 200
 
 # --- Card Management Routes (Flask-Login) ---
 
@@ -488,7 +511,6 @@ def delete_card(card_id, current_user):
 @token_required
 def get_autocomplete_options(current_user):
     user_id = current_user.id
-    
     try:
         # Get all cards for the current user
         user_cards = Card.query.filter_by(owner_id=user_id).all()
@@ -496,20 +518,17 @@ def get_autocomplete_options(current_user):
         # Extract unique values from user cards
         player_names = sorted(list(set(card.player_name for card in user_cards if card.player_name)))
         manufacturers = sorted(list(set(card.manufacturer for card in user_cards if card.manufacturer)))
-        user_teams = sorted(list(set(card.team for card in user_cards if card.team)))
         grades = sorted(list(set(card.grade for card in user_cards if card.grade)))
-        
-        # Get all teams from the database to provide complete options
-        all_teams = [team.name for team in Team.query.order_by(Team.name).all()]
-        # Combine user teams with all database teams (remove duplicates)
-        teams = sorted(list(set(user_teams + all_teams)))
-        
+
+        # Only use teams from the Team table
+        teams = [team.name for team in Team.query.order_by(Team.name).all()]
+
         # Add some common grade options if not already present
         common_grades = ["Raw", "PSA 10", "PSA 9", "PSA 8", "PSA 7", "BGS 10", "BGS 9.5", "BGS 9", "SGC 10", "SGC 9"]
         for grade in common_grades:
             if grade not in grades:
                 grades.append(grade)
-        
+
         return jsonify({
             'player_names': player_names,
             'manufacturers': manufacturers,

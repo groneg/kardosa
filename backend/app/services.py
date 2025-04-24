@@ -377,11 +377,10 @@ def map_ebay_result_to_card_data(ebay_result):
         else:
              mapped_data['grade'] = f"Condition: {condition}" # Store other conditions
 
-    # Basic validation - Now requires a *normalized* player name
+    # Log if player name is missing, but do not return early
     if not mapped_data['player_name']:
-        print("Failed to find a matching player name in database from eBay data.")
-        return None
-        
+        print("No player name matched; will be filled as 'MISSING INFO' later.")
+    
     print(f"Mapped Data: {mapped_data}")
     return mapped_data
 
@@ -402,19 +401,14 @@ def save_card_from_data(data, user_id):
             'date_added': datetime.utcnow()
         }
 
-        # Detailed validation logging
-        missing_required = []
-        for field in ['player_name', 'card_year', 'manufacturer', 'owner_id']:
-            if not mapped_data.get(field):
-                missing_required.append(field)
-        
-        if missing_required:
-            error_msg = f"Missing required fields: {', '.join(missing_required)}"
-            print(f"ERROR: {error_msg}")
-            return None
+        # Fill missing required fields with 'MISSING INFO'
+        for field in ['player_name', 'card_year', 'manufacturer']:
+            if not mapped_data.get(field) or str(mapped_data.get(field)).strip() == '':
+                mapped_data[field] = 'MISSING INFO'
+        # owner_id is always present
 
         print(f"Saving card with data: player={mapped_data['player_name']}, year={mapped_data['card_year']}, manufacturer={mapped_data['manufacturer']}, owner_id={mapped_data['owner_id']}")
-        
+
         # Create new card
         new_card = Card(**mapped_data)
         db.session.add(new_card)
