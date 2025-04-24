@@ -86,6 +86,9 @@ def find_card_on_ebay(image_path):
 
     # --- Read and Base64 Encode Image ---
     try:
+        # If image_path is a URL path (starts with '/uploads/'), convert to real file path
+        if image_path.startswith('/uploads/'):
+            image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], image_path.replace('/uploads/', '', 1))
         with open(image_path, "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
     except Exception as e:
@@ -96,7 +99,7 @@ def find_card_on_ebay(image_path):
     headers = {
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',
-        'X-EBAY-C-MARKPLACE-ID': EBAY_MARKETPLACE_ID
+        'X-EBAY-C-MARKETPLACE-ID': EBAY_MARKETPLACE_ID
     }
     request_body = {
         "image": encoded_string
