@@ -47,7 +47,7 @@ export default function PublicCollectionPage() {
           notes: c.notes || null,
           is_rookie: c.is_rookie || false
         })));
-      } catch (err) {
+      } catch {
         setError('Could not load collection');
       } finally {
         setLoading(false);

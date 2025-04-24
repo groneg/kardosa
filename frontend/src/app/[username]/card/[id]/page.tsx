@@ -32,7 +32,7 @@ export default function PublicCardDetailPage() {
         if (!res.ok) throw new Error('Could not load card');
         const data = await res.json();
         setCard(data.card);
-      } catch (err) {
+      } catch {
         setError('Could not load card');
       } finally {
         setLoading(false);
