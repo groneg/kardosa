@@ -13,18 +13,23 @@ given and reports back to K-BOSS.
   Design work.
 - **K-BUDDY**: session_016yvHcAUWPwbextA9J1qBBT. Reports to K-BOSS.
   Helper for work K-BOSS hands out.
-- **KING**: session_01XHn9iZ4c4BggCKtCyNi8WL. Davis's top session. Not
-  directed by K-BOSS.
+- **KING**: archived. No active address right now. Davis will add the
+  new one.
 
 ## How sessions message each other
 
 The SendMessage tool does not reach cloud sessions. Use the
 claude-code-remote tools instead:
 
-1. Call `create_trigger` with `persistent_session_id` set to the
-   target session's address. Do not set a schedule.
-2. Call `fire_trigger` with the new trigger id to send the message now.
-3. Call `delete_trigger` to clean up the trigger.
+1. The message tools are hidden at first. Run ToolSearch with the
+   query create_trigger fire_trigger delete_trigger to load them.
+2. Call `create_trigger` with `persistent_session_id` set to the
+   target session's address. Do not set a schedule. Set `initiation`
+   to `human_request`.
+3. Call `fire_trigger` with the new trigger id to send the message now.
+4. Call `delete_trigger` to clean up the trigger.
+5. Messages you get from other sessions show up as scheduled trigger
+   notifications. Read them with ReadNotifications.
 
 Start every message with who it is from and your own session address.
 
