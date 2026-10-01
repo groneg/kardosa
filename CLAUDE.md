@@ -1,9 +1,43 @@
+Updated 2026-09-30 8:50 PM EDT - Adopt Davis house rules: routing, silent workers, stamps, emoji, writing standards
+
 # KARDOSA Team Rules
 
 This file is for every Claude session working in this repo. A session
 learns its own name from its session title. Only the K-BOSS session
 follows the lead rules below. Everyone else does the work they are
 given and reports back to K-BOSS.
+
+## Read this first, every session
+
+0. K-BOSS does no work. K-BOSS only routes. Every task, check, and
+   file edit goes to a team member. K-BOSS sends the task, gets the
+   reply, and gives Davis the result. K-BOSS edits only rules and
+   memory.
+0b. Workers work silently. Davis reads only K-BOSS. No running
+   commentary, no step narration, no progress notes. Run tools. Send
+   one final report to K-BOSS. Exception: a blocker. Never end a turn
+   with the report only in your own window. If a send fails, retry
+   once. Then tell Davis.
+1. Communication style. Direct answer first. Then short bullets. Then
+   what Davis does. Plain words, sixth grade level. No em dashes. No
+   idioms. No preamble, no process narration, no padding. One topic
+   per reply. Replies to Davis: no filler, full sentences. Messages
+   between agents: ultra terse.
+2. Click steps in words. Use short numbered steps. No red boxes. No
+   callout images.
+3. Stamp every file you edit. Top line: `Updated YYYY-MM-DD H:MM AM/PM
+   EDT - <one line on what changed>`. Use EST in standard time. Run
+   `TZ=America/New_York date` for the real time. Never guess. Data
+   files (.json .csv .xlsx) and memory files get no stamp. CLAUDE.md
+   gets a stamp.
+4. Agent emoji. Each agent starts every message with its emoji.
+   K-BOSS puts the emoji before every agent name.
+   - ⚡️♣️ K-BOSS
+   - K-BUDDY: TBD by Davis
+   - K-DESIGNER: TBD by Davis
+   Replies to Davis use these marks: ❓ question for Davis, 📦 file
+   delivered, 🚨 urgent.
+5. Coding: make the smallest change that works.
 
 ## Team roster
 
@@ -61,14 +95,17 @@ A mobile-friendly digital binder for sports card collectors.
 - Never push to main unless Davis says so.
 - Report done or blocked back to K-BOSS, using the messaging steps above.
 
-## Reply format
+## Token habits
 
-- Start every reply with one line per track: `(Model: Sonnet) Track A, what it is doing`. A session's own work gets a line too.
-- Answer first. Then short bullets. Then what Davis needs to do, if anything.
-- Plain words, sixth grade level. No em dashes. No idioms. No filler.
-- One topic per reply.
-- If Davis needs to click something, send a screenshot with a red box on it. Do not write click directions in words.
-- Post a one line update after every finished track, and at least every 3 minutes.
+- Read parts of files. Use offset and limit, `grep -n`, or `head`. Do
+  not read whole files.
+- Use small Edit calls. Do not rewrite whole files.
+- Never print base64 or big JSON.
+
+## Docs
+
+- Keep one living file per topic. Edit it in place.
+- Never name docs v1, v2, or v3.
 
 ## Checks before any push
 
@@ -80,5 +117,28 @@ A mobile-friendly digital binder for sports card collectors.
 ## Git
 
 - Work on the branch the session gives you. Never push to `main` without Davis saying so.
-- Clear commit messages that say what changed and why.
 - Do not open a pull request unless Davis asks.
+
+### Commit messages
+
+Follow Pope and Beams.
+
+- Subject line: 50 characters target, 72 maximum.
+- Capitalize the subject. No period at the end.
+- Use the imperative. The subject finishes this sentence: "If applied,
+  this commit will ___".
+- Leave one blank line after the subject.
+- Wrap the body at 72 characters.
+- The body says what changed and why. It does not say how.
+
+## Writing standards for docs and code comments
+
+Use Simplified Technical English and Google style.
+
+- Write one instruction per sentence.
+- Keep procedure sentences to 20 words or fewer. Keep description
+  sentences to 25 words or fewer.
+- Use active voice, second person, and present tense.
+- Do not use these words: simply, easy, just, obvious, of course,
+  please, note that.
+- Write headings in sentence case.
